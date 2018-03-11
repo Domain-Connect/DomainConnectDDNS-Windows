@@ -11,7 +11,7 @@ namespace DomainConnectDDNSUpdate
     public class DomainConnectDDNSWorker
     {
         // The IP Address that DNS has for the A Record
-        string currentDNSIP = null;
+        string currentIP = null;
 
         // Service is initialized
         public bool initialized = false;
@@ -19,7 +19,6 @@ namespace DomainConnectDDNSUpdate
 
         // Service is good for monitoring DNS changes
         public bool monitoring = false;
-        private int numMonitorFails = 0;
 
         // Values from the registry        
         private string domain;                  // Name of the domain
@@ -27,7 +26,7 @@ namespace DomainConnectDDNSUpdate
         private string access_token;            // Access token for oauth
         private string refresh_token;           // Refresh token for oauth
         private string urlAPI;
-        private string dns_provider;
+        private string provider_name;
 
         const string providerId = "exampleservice.domainconnect.org";
 
@@ -56,7 +55,10 @@ namespace DomainConnectDDNSUpdate
             int status = 0;
 
             // Apply template and store the response.
-            string response = OAuthHelper.OAuthHelper.ApplyTemplate(newIP, out status);
+            string templateUrl = this.urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + this.domain + "&host=" + this.host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
+            Dictionary<string, string> headers = new Dictionary<string, string>();
+            headers.Add("Authorization", "Bearer " + this.access_token);
+            string response = RestAPIHelper.RestAPIHelper.POST(templateUrl, headers, out status);
 
             if (response == null || status < 200 || status >= 300)
             {
@@ -111,14 +113,14 @@ namespace DomainConnectDDNSUpdate
             this.host = (string)lkey.GetValue("host");
             this.access_token = (string)lkey.GetValue("access_token");
             this.refresh_token = (string)lkey.GetValue("refresh_token");
-            this.dns_provider = (string)lkey.GetValue("dns_provider");
+            this.provider_name = (string)lkey.GetValue("provider_name");
             this.urlAPI = (string)lkey.GetValue("urlAPI");
 
             if (this.domain == null || this.domain == "" ||
                 this.access_token == null || this.access_token == "" ||
                 this.refresh_token == null || this.refresh_token == "" ||
-                this.dns_provider == null || this.dns_provider == "" ||
-                this.urlAPI == null || this.dns_provider == null)
+                this.provider_name == null || this.provider_name == "" ||
+                this.urlAPI == null || this.provider_name == null)
             {
                 this.WriteEvent("Initiaize failure: missing data. Run installer.", EventLogEntryType.Error);
 
@@ -129,9 +131,9 @@ namespace DomainConnectDDNSUpdate
             string fqdn = this.domain;
             if (this.host != null && host != "")
                 fqdn = this.host + "." + fqdn;
-            this.currentDNSIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
+            this.currentIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
 
-            if (this.currentDNSIP == null)
+            if (this.currentIP == null)
             {
                 this.WriteEvent("Failed to read current IP for domain.", EventLogEntryType.Error);
 
@@ -181,9 +183,10 @@ namespace DomainConnectDDNSUpdate
 
                 // Update the IP if it has changed
                 if (newIP != null &&
-                    (newIP != this.currentDNSIP && status >= 200 && status < 300)) // We need to add a || we haven't updated in a long time
+                    (newIP != this.currentIP && status >= 200 && status < 300)) // We need to add a || we haven't updated in a long time
                 {
                     UpdateIP(newIP);
+                    this.currentIP = newIP;
                 }
             }
         }
