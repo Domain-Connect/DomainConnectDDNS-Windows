@@ -8,8 +8,8 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Timers;
-
-using GoDaddyRestAPI;
+using System.Web.Script.Serialization;
+using RestAPIHelper;
 
 
 namespace GoDaddyDNSUpdate
@@ -17,7 +17,7 @@ namespace GoDaddyDNSUpdate
     public partial class DomainConnectDDNSUpdate : ServiceBase
     {
         // The IP Address that GoDaddy has for the A Record
-        string goDaddyIP = null;
+        string currentDNSIP = null;
 
         // Timer for the updates
         private Timer timer;
@@ -33,11 +33,15 @@ namespace GoDaddyDNSUpdate
         private int numMonitorFails = 0;
 
         // Values from the registry        
-        private string domainName;              // Name of the domain
-        private string apiKey;                  // APIKey:Secret    
-
-        private string aName;
-        private string aRecordTemplate;
+        private string domain;                  // Name of the domain
+        private string host;                    // Host (sub-domain)
+        private string response_code;           // OAuth Response Code for getting access token
+        private string access_token;            // Access token for oauth
+        private string refresh_token;           // Refresh token for oauth
+        private string urlAPI;
+        private string dns_provider;    
+        
+        const string providerId = "exampleservice.domainconnect.org";
 
         //-------------------------------------------------------
         // UpdateIP
@@ -49,7 +53,11 @@ namespace GoDaddyDNSUpdate
             bool result = false;
             int status = 0;
 
-            result = GoDaddyRestAPI.GoDaddyRestAPI.UpdateGoDaddyIP(this.domainName, this.apiKey, "A", this.aName, newIP, this.aRecordTemplate, out status);            
+            string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
+
+            string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
+
+            result = GoDaddyRestAPI.RestAPIHelper.UpdateGoDaddyIP(this.domainName, this.apiKey, "A", this.aName, newIP, this.aRecordTemplate, out status);            
             
             if (!result)
             {
@@ -91,8 +99,10 @@ namespace GoDaddyDNSUpdate
         {
 
             // Read values in from the registry
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\GoDaddyDNSUpdate\Config"))
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\DomainConnectDDNSUpdate\Config"))
             {
+                int status = 0;
+
                 if (key == null)
                 {
                     eventLog1.WriteEntry("Unable to get configuration from registry", EventLogEntryType.Error);
@@ -102,24 +112,53 @@ namespace GoDaddyDNSUpdate
                     return;
                 }
                 
-                this.domainName = (string)key.GetValue("Domain", null);
-                this.apiKey = (string)key.GetValue("ApiKey", null);
-                this.aName = (string)key.GetValue("AName", "@");
-                this.aRecordTemplate = (string)key.GetValue("ATemplate", "[{\"data\" : \"%ip%\", \"ttl\" : 1800}]");
+                this.domain = (string)key.GetValue("domain", null);
+                this.host = (string)key.GetValue("host", null);
+                this.access_token = (string)key.GetValue("access_token", null);
+                this.refresh_token = (string)key.GetValue("refresh_token", null);
+                this.dns_provider = (string)key.GetValue("dns_provider", null);
+                this.urlAPI = (string)key.GetValue("urlAPI", null);
+                this.response_code = (string)key.GetValue("response_code", null);
 
-                if (this.apiKey == null || this.apiKey == "" || this.domainName == null || this.domainName == "")
+                if (this.domain == null || this.domain == "")
                 {
-                    eventLog1.WriteEntry("Initiaize failure. Missing Key or domain name.", EventLogEntryType.Error);
+                    eventLog1.WriteEntry("Initiaize failure. Missing .", EventLogEntryType.Error);
                   
                     return;
                 }
-                
+
+                if (access_token == null)
+                {
+                    string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
+
+                    string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
+
+                    string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
+                    if (status >= 300)
+                    {
+                        eventLog1.WriteEntry("OAuth error.", EventLogEntryType.Error);
+                    }
+
+                    var jss = new JavaScriptSerializer();
+                    var table = jss.Deserialize<dynamic>(json);
+                    this.access_token = table["access_token"];
+                    this.refresh_token = table["refresh_token"];
+                    //this.expires_in = table["expires_in"];
+
+
+
+                    var jss = new JavaScriptSerializer();
+                    var dict = jss.Deserialize<Dictionary>
+                }
+
                 // Query the initial (current) IP from GoDaddy
-                int status = 0;
-                this.goDaddyIP = GoDaddyRestAPI.GoDaddyRestAPI.GetGoDaddyIP(this.domainName, this.apiKey, "A", this.aName, out status);
-                
-                // If we have an IP to update
-                if (this.goDaddyIP == null)
+                string fqdn = this.domain;
+                if (this.host != null && host != "")
+                    fqdn = this.host + "." + fqdn;
+
+                this.currentDNSIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
+                  
+                if (this.currentDNSIP == null)
                 {
                     eventLog1.WriteEntry("Failed to read IP for domain.", EventLogEntryType.Error);
 
@@ -142,9 +181,9 @@ namespace GoDaddyDNSUpdate
                 eventLog1.WriteEntry("Initialized and running.");
 
                 // Get the IP Address as reported by a ping
-                string newIP = GoDaddyRestAPI.GoDaddyRestAPI.GET("http://api.ipify.org", out status);
+                string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
 
-                if (newIP != null && newIP != this.goDaddyIP && status >= 200 && status < 300)
+                if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
                 {
                     this.UpdateIP(newIP);
                 }                
@@ -172,10 +211,10 @@ namespace GoDaddyDNSUpdate
             {
                 // We are initialized. See if our IP has changed
                 int status = 0;
-                string newIP = GoDaddyRestAPI.GoDaddyRestAPI.GET("http://api.ipify.org", out status);            
+                string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);            
 
                 // Update the IP if it has changed
-                if (newIP != null && newIP != this.goDaddyIP && status >= 200 && status < 300)
+                if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
                 {
                     UpdateIP(newIP);
                 }
@@ -219,7 +258,7 @@ namespace GoDaddyDNSUpdate
         }
 
         //-----------------------------------------------------------
-        // GoDaddyDNSUpdate
+        // DomainConnectDDNSUpdate
         //
         // Service initialization
         //

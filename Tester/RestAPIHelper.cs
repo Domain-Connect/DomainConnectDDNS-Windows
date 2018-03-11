@@ -52,63 +52,7 @@ namespace GoDaddyRestAPI
             }
         }
 
-        //////////////////////////////////////////////
-        // GoDaddyRest
-        //
-        // Does a GoDaddy rest call, inserting the apiKey, shopperId, method, and body as appropriate
-        //
-        // The response json is returned as a string.
-        //
-        // Failures return null
-        //
-        public static string GoDaddyRest(string url, string apiKey, string method, string body, out int status)
-        {
-            HttpWebResponse response = null;
-            status = 0;
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Headers["Authorization"] = "sso-key " + apiKey;
-                request.Accept = "application/json";
-                request.Method = method;
-
-                request.ContentType = "application/json";
-                if (body != null)
-                {
-                    ASCIIEncoding encoding = new ASCIIEncoding();
-                    byte[] data = encoding.GetBytes(body);
-                    request.ContentLength = data.Length;
-
-                    Stream requestStream = request.GetRequestStream();
-                    requestStream.Write(data, 0, data.Length);
-                    requestStream.Close();
-                }
-
-                response = (HttpWebResponse)request.GetResponse();
-                Stream responseStream = response.GetResponseStream();
-                StreamReader reader = new StreamReader(responseStream);
-
-                string responseData = reader.ReadToEnd();
-
-                reader.Close();
-                responseStream.Close();
-
-                status = (int)response.StatusCode;
-
-                return responseData;
-            }
-            catch (WebException e)
-            {
-                if (e.Status == WebExceptionStatus.ProtocolError)
-                    status = (int)((HttpWebResponse)e.Response).StatusCode;
-
-                return null;
-            }
-            catch (Exception e)
-            {                
-                return null;
-            }
-        }
+   
 
         /////////////////////////////////////////////////
         // GetDNSIP
