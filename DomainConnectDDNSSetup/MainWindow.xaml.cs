@@ -89,18 +89,31 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            DomainConnectDDNS.DomainConnectDDNS.Default.domain_name = domainnameText;
-            DomainConnectDDNS.DomainConnectDDNS.Default.host = subdomainnameText;
-            DomainConnectDDNS.DomainConnectDDNS.Default.provider_name = providerName;
-            DomainConnectDDNS.DomainConnectDDNS.Default.urlAPI = urlAPI;
-            DomainConnectDDNS.DomainConnectDDNS.Default.Save();
 
+
+            // Verify we can write to the registry
+            RegistryKey lkey = Registry.LocalMachine;
+            try
+            {
+                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
+
+                return;
+            }
+
+            lkey.SetValue("domain_name", domainnameText);
+            lkey.SetValue("host", subdomainnameText);
+            lkey.SetValue("provider_name", providerName);
+            lkey.SetValue("urlAPI", urlAPI);
 
             // Get the value of the _domainconnect record
             string url = urlAsyncUX + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1?";
             url += ("domain=" + domainnameText + "&client_id=exampleservice.domainconnect.org&scope=template1");
 
-            string redirect_uri = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + domainnameText + "&hosts=" + subdomainnameText + "&dns_provider=" + providerName + "&code_only=1";
+            string redirect_uri = "http://exampleservice.domainconnect.org/ddns_oauth_code?domain=" + domainnameText + "&hosts=" + subdomainnameText + "&dns_provider=" + providerName + "&code_only=1";
 
             url += "&redirect_uri=" + WebUtility.UrlEncode(redirect_uri);
 
@@ -127,10 +140,23 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            string domain_name = DomainConnectDDNS.DomainConnectDDNS.Default.domain_name;
-            string host = DomainConnectDDNS.DomainConnectDDNS.Default.host;
-            string provider_name = DomainConnectDDNS.DomainConnectDDNS.Default.provider_name;
-            string urlAPI = DomainConnectDDNS.DomainConnectDDNS.Default.urlAPI;
+            // Verify we can write to the registry
+            RegistryKey lkey = Registry.LocalMachine;
+            try
+            {
+                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
+
+                return;
+            }
+
+            string domain_name = (string)lkey.GetValue("domain_name");
+            string host = (string)lkey.GetValue("host");
+            string provider_name = (string)lkey.GetValue("provider_name");
+            string urlAPI = (string)lkey.GetValue("urlAPI");
 
             string access_token;
             string refresh_token;
@@ -142,11 +168,10 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            DomainConnectDDNS.DomainConnectDDNS.Default.access_token = access_token;
-            DomainConnectDDNS.DomainConnectDDNS.Default.refresh_token = refresh_token;
-            DomainConnectDDNS.DomainConnectDDNS.Default.iat = iat;
-            DomainConnectDDNS.DomainConnectDDNS.Default.expires_in = expires_in;
-
+            lkey.SetValue("access_token", access_token);
+            lkey.SetValue("refresh_token", refresh_token);
+            lkey.SetValue("iat", iat, RegistryValueKind.DWord);
+            lkey.SetValue("expires_in", expires_in, RegistryValueKind.DWord);
 
             // -i is passed from installer.  When run from command line, tell the user they need to restart
             string[] args = Environment.GetCommandLineArgs();            

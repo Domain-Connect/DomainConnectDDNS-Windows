@@ -50,6 +50,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\DomainConnectDDNSUpdate\DomainConnectDDNSWorker.cs">
+      <Link>DomainConnectDDNSWorker.cs</Link>
+    </Compile>
     <Compile Include="..\DomainConnectDDNSUpdate\OAuthHelper.cs">
       <Link>OAuthHelper.cs</Link>
     </Compile>

@@ -69,12 +69,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="..\DomainConnectDDNSUpdate\DomainConnectDDNS.Designer.cs">
-      <Link>DomainConnectDDNS.Designer.cs</Link>
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>DomainConnectDDNS.settings</DependentUpon>
-    </Compile>
     <Compile Include="..\DomainConnectDDNSUpdate\OAuthHelper.cs">
       <Link>OAuthHelper.cs</Link>
     </Compile>
@@ -108,12 +102,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="..\DomainConnectDDNSUpdate\DomainConnectDDNS.settings">
-      <Link>DomainConnectDDNS.settings</Link>
-      <Generator>PublicSettingsSingleFileGenerator</Generator>
-      <LastGenOutput>DomainConnectDDNS.Designer.cs</LastGenOutput>
-      <CustomToolNamespace>DomainConnectDDNS</CustomToolNamespace>
-    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

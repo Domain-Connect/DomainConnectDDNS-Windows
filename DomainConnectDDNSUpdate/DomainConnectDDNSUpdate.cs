@@ -14,138 +14,16 @@ using System.Configuration;
 
 namespace DomainConnectDDNSUpdate
 {
+   
+
     public partial class DomainConnectDDNSUpdate : ServiceBase
     {
-        // The IP Address that GoDaddy has for the A Record
-        string currentDNSIP = null;
-
         // Timer for the updates
         private Timer timer;
         private int interval = 600000;              // Every 10 minutes 
         private int shortinterval = 60000;          // Every 1 minute 
 
-        // Service is initialized
-        private bool initialized = false;
-        private int numInitializeFails = 0;
-
-        // Service is good for monitoring DNS changes
-        private bool monitoring = false;
-        //private int numMonitorFails = 0;
-
-        // Values from the registry        
-        private string domain;                  // Name of the domain
-        private string host;                    // Host (sub-domain)
-        private string access_token;            // Access token for oauth
-        private string refresh_token;           // Refresh token for oauth
-        private string urlAPI;
-        private string dns_provider;    
-        
-        const string providerId = "exampleservice.domainconnect.org";
-
-        //-------------------------------------------------------
-        // UpdateIP
-        //
-        // Updates the IP with GoDaddy according to the template
-        //
-        public bool UpdateIP(string newIP)
-        {
-            int status = 0;
-
-            // Apply template and store the response.
-            string response = OAuthHelper.OAuthHelper.ApplyTemplate(newIP, out status);
-
-            if (response == null || status < 200 || status >= 300)
-            {
-                eventLog1.WriteEntry("Failure to update IP", EventLogEntryType.Error);
-
-                // Status of 0 is failed internet.  We also won't penalize if the server is down.
-                if (status != 0 || status < 500)
-                    this.numMonitorFails++;
-
-                // After 10 failures, we stop retrying
-                if (this.numMonitorFails > 10)
-                {
-                    eventLog1.WriteEntry("Failure to update IP threshold reached. Service must be restarted to try again.", EventLogEntryType.Error);
-
-                    this.monitoring = false;
-                }
-
-                return false;
-            }
-            else
-            {
-                this.numMonitorFails = 0;
-
-                eventLog1.WriteEntry("IP Updated to " + newIP);
-
-                return true;
-            }
-        }
-
-
-        //-------------------------------------------------------
-        // InitService
-        //
-        // Initializes the service
-        //
-        private void InitService()
-        {
-            int status = 0;
-
-            this.domain = DomainConnectDDNS.DomainConnectDDNS.Default.domain_name;
-            this.host = DomainConnectDDNS.DomainConnectDDNS.Default.host;
-            this.access_token = DomainConnectDDNS.DomainConnectDDNS.Default.access_token;
-            this.refresh_token = DomainConnectDDNS.DomainConnectDDNS.Default.refresh_token;
-            this.dns_provider = DomainConnectDDNS.DomainConnectDDNS.Default.provider_name;
-            this.urlAPI = DomainConnectDDNS.DomainConnectDDNS.Default.urlAPI;
-
-            if (this.domain == null || this.domain == "")
-            {
-                eventLog1.WriteEntry("Initiaize failure. Missing .", EventLogEntryType.Error);
-                  
-                return;
-            }
-
-            // Query the initial (current) IP from DNS
-            string fqdn = this.domain;
-            if (this.host != null && host != "")
-                fqdn = this.host + "." + fqdn;
-
-            this.currentDNSIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
-                  
-            if (this.currentDNSIP == null)
-            {
-                eventLog1.WriteEntry("Failed to read IP for domain.", EventLogEntryType.Error);
-
-                // We won't penalize if internet or service is down
-                if (status != 0 && status < 500)
-                    this.numInitializeFails++;
-
-                if (this.numInitializeFails > 10)
-                {
-                    eventLog1.WriteEntry("Failed to start threshold reached.  Restart service to try again.", EventLogEntryType.Error);
-                    this.initialized = true;
-                }
-
-                return;
-            }
-            
-            // Service successfully initalized
-            this.initialized = true;
-            this.monitoring = true;
-
-            eventLog1.WriteEntry("Initialized and running.");
-
-            // Get the IP Address as reported by a ping
-            string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
-
-            if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
-            {
-                    this.UpdateIP(newIP);
-            }                
-            
-        }
-
+        DomainConnectDDNSWorker worker;
 
         //----------------------------------------------------
         // timer_Elaspsed
@@ -157,32 +35,16 @@ namespace DomainConnectDDNSUpdate
             // Stop the timer
             timer.Stop();
 
-            // If we haven't initialized, try to initialize now
-            if (!this.initialized)
-            {
-                this.InitService();                
-            }
-            else if (this.monitoring)
-            {
-                // We are initialized. See if our IP has changed
-                int status = 0;
-                string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);            
-
-                // Update the IP if it has changed
-                if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
-                {
-                    UpdateIP(newIP);
-                }
-            }
-
+            // Do the work
+            this.worker.DoWork();
             
-            // Re start the timer with short or standard interval
-            if (!this.initialized)
+            // Re start the timer with short or standard interval depending on if we have initialized
+            if (!this.worker.initialized)
             {
                 timer.Interval = shortinterval;
                 timer.Start();
             }
-            else if (this.monitoring)
+            else if (this.worker.monitoring)
             {
                 timer.Interval = interval;
                 timer.Start();
@@ -199,6 +61,8 @@ namespace DomainConnectDDNSUpdate
         protected override void OnStart(string[] args)
         {
             eventLog1.WriteEntry("Started");
+
+            this.worker = new DomainConnectDDNSWorker(eventLog1);
 
             timer = new Timer();
             timer.Interval = shortinterval;
@@ -222,11 +86,11 @@ namespace DomainConnectDDNSUpdate
             InitializeComponent();
 
             eventLog1 = new System.Diagnostics.EventLog();
-            if (!System.Diagnostics.EventLog.SourceExists("GoDaddyDNSUpdate"))
+            if (!System.Diagnostics.EventLog.SourceExists("DomainConnectDDNSUpdate"))
             {
-                System.Diagnostics.EventLog.CreateEventSource("GoDaddyDNSUpdate", "");
+                System.Diagnostics.EventLog.CreateEventSource("DomainConnectDDNSUpdate", "");
             }
-            eventLog1.Source = "GoDaddyDNSUpdate";
+            eventLog1.Source = "DomainConnectDDNSUpdate";
             eventLog1.Log = "";
         }
     }

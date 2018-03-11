@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DnsClient;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -104,7 +105,7 @@ namespace RestAPIHelper
         //
         // Will find the IP that DNS is reporting for the A Record for a domain
         //
-        public static string GetDNSIP(string host)
+        public static string GetDNSIPOld(string host)
         {
             IPHostEntry hostEntry = Dns.GetHostEntry(host);
 
@@ -118,6 +119,35 @@ namespace RestAPIHelper
             return null;
         }
 
+
+        static public string GetDNSIP(string host)
+        {
+            try
+            {
+                var client = new LookupClient();
+                client.UseCache = true;
+
+                var result = client.Query(host, QueryType.A);
+
+                foreach (var answer in result.Answers)
+                {
+                    if (answer.RecordType == DnsClient.Protocol.ResourceRecordType.A)
+                    {
+                        DnsClient.Protocol.ARecord aRecord = (DnsClient.Protocol.ARecord)answer;
+
+                        return aRecord.Address.ToString();
+
+                    }
+                }
+
+                return "";
+            }
+            catch
+            {
+                return null;
+            }
+
+        }
 
     }
 }

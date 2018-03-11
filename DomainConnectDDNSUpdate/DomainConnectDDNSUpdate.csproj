@@ -57,17 +57,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Application.cs" />
-    <Compile Include="DomainConnectDDNS.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>DomainConnectDDNS.settings</DependentUpon>
-    </Compile>
     <Compile Include="DomainConnectDDNSUpdate.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="DomainConnectDDNSUpdate.Designer.cs">
       <DependentUpon>DomainConnectDDNSUpdate.cs</DependentUpon>
     </Compile>
+    <Compile Include="DomainConnectDDNSWorker.cs" />
     <Compile Include="OAuthHelper.cs" />
     <Compile Include="RestAPIHelper.cs" />
     <Compile Include="Program.cs" />
@@ -81,11 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="DomainConnectDDNS.settings">
-      <Generator>PublicSettingsSingleFileGenerator</Generator>
-      <LastGenOutput>DomainConnectDDNS.Designer.cs</LastGenOutput>
-      <CustomToolNamespace>DomainConnectDDNS</CustomToolNamespace>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
