@@ -89,6 +89,33 @@ namespace GoDaddyDNSUpdate
             }
         }
 
+        private void GetTokens()
+        {
+            if (access_token == null)
+            {
+                string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
+
+                string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
+
+                string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
+                if (status >= 300)
+                {
+                    eventLog1.WriteEntry("OAuth error.", EventLogEntryType.Error);
+                }
+
+                var jss = new JavaScriptSerializer();
+                var table = jss.Deserialize<dynamic>(json);
+                this.access_token = table["access_token"];
+                this.refresh_token = table["refresh_token"];
+                //this.expires_in = table["expires_in"];
+
+
+
+                var jss = new JavaScriptSerializer();
+                var dict = jss.Deserialize<Dictionary>
+             }
+
+        }
         
         //-------------------------------------------------------
         // InitService
@@ -118,7 +145,7 @@ namespace GoDaddyDNSUpdate
                 this.refresh_token = (string)key.GetValue("refresh_token", null);
                 this.dns_provider = (string)key.GetValue("dns_provider", null);
                 this.urlAPI = (string)key.GetValue("urlAPI", null);
-                this.response_code = (string)key.GetValue("response_code", null);
+                
 
                 if (this.domain == null || this.domain == "")
                 {
@@ -127,29 +154,7 @@ namespace GoDaddyDNSUpdate
                     return;
                 }
 
-                if (access_token == null)
-                {
-                    string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
-
-                    string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
-
-                    string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
-                    if (status >= 300)
-                    {
-                        eventLog1.WriteEntry("OAuth error.", EventLogEntryType.Error);
-                    }
-
-                    var jss = new JavaScriptSerializer();
-                    var table = jss.Deserialize<dynamic>(json);
-                    this.access_token = table["access_token"];
-                    this.refresh_token = table["refresh_token"];
-                    //this.expires_in = table["expires_in"];
-
-
-
-                    var jss = new JavaScriptSerializer();
-                    var dict = jss.Deserialize<Dictionary>
-                }
+               
 
                 // Query the initial (current) IP from GoDaddy
                 string fqdn = this.domain;
