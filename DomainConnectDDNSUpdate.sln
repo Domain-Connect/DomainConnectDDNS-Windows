@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27428.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomainConnectDDNSUpdate", "DomainConnectDDNSUpdate\DomainConnectDDNSUpdate.csproj", "{CA5B3F26-C55B-4BA4-8955-D9BB8D1BE175}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tester", "Tester\Tester.csproj", "{BFC3D606-A827-4A63-AE16-FCA4097E1770}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tester", "Tester\Tester.csproj", "{C6AC396E-40E1-4A5A-B4BA-2F65EE9BFC8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{CA5B3F26-C55B-4BA4-8955-D9BB8D1BE175}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA5B3F26-C55B-4BA4-8955-D9BB8D1BE175}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA5B3F26-C55B-4BA4-8955-D9BB8D1BE175}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BFC3D606-A827-4A63-AE16-FCA4097E1770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BFC3D606-A827-4A63-AE16-FCA4097E1770}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BFC3D606-A827-4A63-AE16-FCA4097E1770}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BFC3D606-A827-4A63-AE16-FCA4097E1770}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6AC396E-40E1-4A5A-B4BA-2F65EE9BFC8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6AC396E-40E1-4A5A-B4BA-2F65EE9BFC8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6AC396E-40E1-4A5A-B4BA-2F65EE9BFC8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6AC396E-40E1-4A5A-B4BA-2F65EE9BFC8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

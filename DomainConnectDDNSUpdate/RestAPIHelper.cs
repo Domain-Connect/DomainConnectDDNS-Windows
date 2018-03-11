@@ -51,6 +51,42 @@ namespace RestAPIHelper
             }
         }
 
+        public static string POST(string url, out int status)
+        {
+            HttpWebResponse response = null;
+            status = 0;
+            try
+            { 
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+
+                request.Method = "POST";
+                response = (HttpWebResponse)request.GetResponse();
+                Stream stream = response.GetResponseStream();
+                StreamReader reader = new StreamReader(stream);
+
+                string data = reader.ReadToEnd();
+
+                reader.Close();
+                stream.Close();
+
+                status = (int)response.StatusCode;
+
+                return data;
+            }
+            catch (WebException e)
+            {
+                if (e.Status == WebExceptionStatus.ProtocolError)
+                    status = (int) ((HttpWebResponse) e.Response).StatusCode;                   
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+
+        }
+
         /////////////////////////////////////////////////
         // GetDNSIP
         //
@@ -69,44 +105,7 @@ namespace RestAPIHelper
 
             return null;
         }
-
-        ////////////////////////////////////////////////////////////
-        // Wrappers around the GoDaddyRest API
-        ////////////////////////////////////////////////////////////
-
-        /////////////////////////////////////////////////
-        // GetGoDaddyIP
-        //
-        // Will get the A Record IP Address for the domain from GoDaddy's DNS
-        //
-        // null indicates a failure of some kind
-        //
-        public static string GetGoDaddyIP(string domainName, string apiKey, string recordType, string name, out int status)
-        {
-            string url = serviceURL + "/v1/domains/" + domainName + "/records/" + recordType + "/" + name;
-
-            string data = GoDaddyRest(url, apiKey, "GET", null, out status);
-         
-            if (data == null)
-                return null;
-
-            try
-            {
-                JavaScriptSerializer jss = new JavaScriptSerializer();
-
-                var jObject = jss.Deserialize<dynamic>(data);
-
-                string result = (string)jObject[0]["data"];
-
-                if (result == null) result = "";
-
-                return result;
-            }
-            catch
-            {
-                return null;
-            }
-        }
+       
 
 
     }

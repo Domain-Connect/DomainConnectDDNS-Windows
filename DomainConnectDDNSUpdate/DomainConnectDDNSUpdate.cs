@@ -10,7 +10,7 @@ using System.Text;
 using System.Timers;
 using System.Web.Script.Serialization;
 using RestAPIHelper;
-
+using System.Configuration;
 
 namespace GoDaddyDNSUpdate
 {
@@ -50,6 +50,7 @@ namespace GoDaddyDNSUpdate
         //
         public bool UpdateIP(string newIP)
         {
+            /*
             bool result = false;
             int status = 0;
 
@@ -87,35 +88,27 @@ namespace GoDaddyDNSUpdate
 
                 return true;
             }
+            */
+            return true;
         }
 
-        private void GetTokens()
+        static void AddUpdateAppSettings(string key, string value)
         {
-            if (access_token == null)
+            var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var settings = configFile.AppSettings.Settings;
+            if (settings[key] == null)
             {
-                string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
-
-                string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
-
-                string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
-                if (status >= 300)
-                {
-                    eventLog1.WriteEntry("OAuth error.", EventLogEntryType.Error);
-                }
-
-                var jss = new JavaScriptSerializer();
-                var table = jss.Deserialize<dynamic>(json);
-                this.access_token = table["access_token"];
-                this.refresh_token = table["refresh_token"];
-                //this.expires_in = table["expires_in"];
-
-
-
-                var jss = new JavaScriptSerializer();
-                var dict = jss.Deserialize<Dictionary>
-             }
-
+                settings.Add(key, value);
+            }
+            else
+            {
+                settings[key].Value = value;
+            }
+            configFile.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
         }
+
+        
         
         //-------------------------------------------------------
         // InitService
