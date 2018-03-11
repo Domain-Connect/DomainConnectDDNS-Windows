@@ -14,7 +14,7 @@ namespace Tester
         
         static void Main(string[] args)
         {
-            bool result = OAuthHelper.OAuthHelper.GetTokens("4f6446f08ff64e28b1a2631372d0cda3");
+            bool result = OAuthHelper.OAuthHelper.GetTokens("6a2f8c665126444d88ca3b95f3340bdd");
         }
     }
 }

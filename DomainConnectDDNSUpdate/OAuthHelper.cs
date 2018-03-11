@@ -62,7 +62,7 @@ namespace OAuthHelper
 
             AddUpdateAppSettings("access_token", table["access_token"]);
             AddUpdateAppSettings("refresh_token", table["refresh_token"]);
-            AddUpdateAppSettings("expires_in", table["expires_in"]);
+            AddUpdateAppSettings("expires_in", table["expires_in"].ToString());
             Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             AddUpdateAppSettings("iat", unixTimestamp.ToString());
 
