@@ -51,7 +51,13 @@ namespace RestAPIHelper
             }
         }
 
-        public static string POST(string url, out int status)
+        /////////////////////////////////////////////////
+        // POST
+        //
+        // Implementation of http POST. Again returns responses as strings and failures as null.
+        // Custom headers can be passed in as a dictionary of key/value string pairs, or as null for no header.
+        //
+        public static string POST(string url, Dictionary<string, string> headers, out int status)
         {
             HttpWebResponse response = null;
             status = 0;
@@ -60,6 +66,12 @@ namespace RestAPIHelper
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
 
                 request.Method = "POST";
+                if (headers != null)
+                {
+                    foreach (KeyValuePair<string, string> entry in headers)
+                        request.Headers[entry.Key] = entry.Value;
+                }
+
                 response = (HttpWebResponse)request.GetResponse();
                 Stream stream = response.GetResponseStream();
                 StreamReader reader = new StreamReader(stream);
