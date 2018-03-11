@@ -52,6 +52,7 @@ namespace GoDaddyDNSUpdate
         {
             int status = 0;
 
+            // Apply template and store the response.
             string response = OAuthHelper.OAuthHelper.ApplyTemplate(newIP, out status);
 
             if (response == null || status < 200 || status >= 300)

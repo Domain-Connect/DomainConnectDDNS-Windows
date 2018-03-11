@@ -70,6 +70,11 @@ namespace OAuthHelper
             return true;
         }
 
+        //
+        // ApplyTemplate
+        //
+        // Given an IP, will update the DNS A record, returning POST response.
+        //
         public static string ApplyTemplate(string newIP, out int status)
         {
             string domain = ConfigurationManager.AppSettings["domain"];
@@ -80,7 +85,7 @@ namespace OAuthHelper
             // Update the DNS code. Change the result flag.
             string url = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + domain + "&host=" + host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
 
-            //Add the authorization header.
+            //Add the auth header.
             Dictionary<string, string> headers = new Dictionary<string, string>();
             headers.Add("Authorization", "Bearer " + access_token);
 
