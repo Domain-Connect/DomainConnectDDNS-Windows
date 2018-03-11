@@ -1,4 +1,4 @@
-﻿namespace GoDaddyDNSUpdate
+﻿namespace DomainConnectDDNSUpdate
 {
     partial class DomainConnectDDNSUpdate
     {

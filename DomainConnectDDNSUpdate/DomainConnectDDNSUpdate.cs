@@ -12,7 +12,7 @@ using System.Web.Script.Serialization;
 using RestAPIHelper;
 using System.Configuration;
 
-namespace GoDaddyDNSUpdate
+namespace DomainConnectDDNSUpdate
 {
     public partial class DomainConnectDDNSUpdate : ServiceBase
     {
@@ -30,12 +30,11 @@ namespace GoDaddyDNSUpdate
 
         // Service is good for monitoring DNS changes
         private bool monitoring = false;
-        private int numMonitorFails = 0;
+        //private int numMonitorFails = 0;
 
         // Values from the registry        
         private string domain;                  // Name of the domain
         private string host;                    // Host (sub-domain)
-        private string response_code;           // OAuth Response Code for getting access token
         private string access_token;            // Access token for oauth
         private string refresh_token;           // Refresh token for oauth
         private string urlAPI;
@@ -92,24 +91,6 @@ namespace GoDaddyDNSUpdate
             return true;
         }
 
-        static void AddUpdateAppSettings(string key, string value)
-        {
-            var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            var settings = configFile.AppSettings.Settings;
-            if (settings[key] == null)
-            {
-                settings.Add(key, value);
-            }
-            else
-            {
-                settings[key].Value = value;
-            }
-            configFile.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-        }
-
-        
-        
         //-------------------------------------------------------
         // InitService
         //
@@ -117,76 +98,60 @@ namespace GoDaddyDNSUpdate
         //
         private void InitService()
         {
+            int status = 0;
 
-            // Read values in from the registry
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\DomainConnectDDNSUpdate\Config"))
+            this.domain = DomainConnectDDNS.DomainConnectDDNS.Default.domain_name;
+            this.host = DomainConnectDDNS.DomainConnectDDNS.Default.host;
+            this.access_token = DomainConnectDDNS.DomainConnectDDNS.Default.access_token;
+            this.refresh_token = DomainConnectDDNS.DomainConnectDDNS.Default.refresh_token;
+            this.dns_provider = DomainConnectDDNS.DomainConnectDDNS.Default.provider_name;
+            this.urlAPI = DomainConnectDDNS.DomainConnectDDNS.Default.urlAPI;
+
+            if (this.domain == null || this.domain == "")
             {
-                int status = 0;
-
-                if (key == null)
-                {
-                    eventLog1.WriteEntry("Unable to get configuration from registry", EventLogEntryType.Error);
-
-                    // Don't mark as initialized....we'll keep trying in case data is written to registry later
-
-                    return;
-                }
-                
-                this.domain = (string)key.GetValue("domain", null);
-                this.host = (string)key.GetValue("host", null);
-                this.access_token = (string)key.GetValue("access_token", null);
-                this.refresh_token = (string)key.GetValue("refresh_token", null);
-                this.dns_provider = (string)key.GetValue("dns_provider", null);
-                this.urlAPI = (string)key.GetValue("urlAPI", null);
-                
-
-                if (this.domain == null || this.domain == "")
-                {
-                    eventLog1.WriteEntry("Initiaize failure. Missing .", EventLogEntryType.Error);
+                eventLog1.WriteEntry("Initiaize failure. Missing .", EventLogEntryType.Error);
                   
-                    return;
-                }
-
-               
-
-                // Query the initial (current) IP from GoDaddy
-                string fqdn = this.domain;
-                if (this.host != null && host != "")
-                    fqdn = this.host + "." + fqdn;
-
-                this.currentDNSIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
-                  
-                if (this.currentDNSIP == null)
-                {
-                    eventLog1.WriteEntry("Failed to read IP for domain.", EventLogEntryType.Error);
-
-                    // We won't penalize if internet or service is down
-                    if (status != 0 && status < 500)
-                        this.numInitializeFails++;
-
-                    if (this.numInitializeFails > 10)
-                    {
-                        eventLog1.WriteEntry("Failed to start threshold reached.  Restart service to try again.", EventLogEntryType.Error);
-                        this.initialized = true;
-                    }
-
-                    return;
-                }
-                // Service successfully initalized
-                this.initialized = true;
-                this.monitoring = true;
-
-                eventLog1.WriteEntry("Initialized and running.");
-
-                // Get the IP Address as reported by a ping
-                string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
-
-                if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
-                {
-                    this.UpdateIP(newIP);
-                }                
+                return;
             }
 
+            // Query the initial (current) IP from DNS
+            string fqdn = this.domain;
+            if (this.host != null && host != "")
+                fqdn = this.host + "." + fqdn;
+
+            this.currentDNSIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
+                  
+            if (this.currentDNSIP == null)
+            {
+                eventLog1.WriteEntry("Failed to read IP for domain.", EventLogEntryType.Error);
+
+                // We won't penalize if internet or service is down
+                if (status != 0 && status < 500)
+                    this.numInitializeFails++;
+
+                if (this.numInitializeFails > 10)
+                {
+                    eventLog1.WriteEntry("Failed to start threshold reached.  Restart service to try again.", EventLogEntryType.Error);
+                    this.initialized = true;
+                }
+
+                return;
+            }
+            
+            // Service successfully initalized
+            this.initialized = true;
+            this.monitoring = true;
+
+            eventLog1.WriteEntry("Initialized and running.");
+
+            // Get the IP Address as reported by a ping
+            string newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
+
+            if (newIP != null && newIP != this.currentDNSIP && status >= 200 && status < 300)
+            {
+                    this.UpdateIP(newIP);
+            }                
+            
         }
 
 

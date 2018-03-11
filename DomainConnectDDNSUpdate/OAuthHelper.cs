@@ -2,6 +2,8 @@
 using System.Configuration;
 using System.Web.Script.Serialization;
 using System.Net;
+using System.Collections.Generic;
+using DnsClient;
 
 namespace OAuthHelper
 {
@@ -9,47 +11,23 @@ namespace OAuthHelper
     {
         const string providerId = "exampleservice.domainconnect.org";
 
-        static void AddUpdateAppSettings(string key, string value)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                if (settings[key] == null)
-                {
-                    settings.Add(key, value);
-                }
-                else
-                {
-                    settings[key].Value = value;
-                }
-                configFile.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-            }
-            catch (ConfigurationErrorsException)
-            {
-                Console.WriteLine("Error writing app settings");
-            }
-        }
-
         //
         // GetTokens
         //
         // Given an input of either a response code from an oauth authorization, or a refresh token,
         // will fetch the access_token and a refresh_token using oauth
         //
-        static public bool GetTokens(string input)
+        static public bool GetTokens(string code, string domain, string host, string dns_provider, string urlAPI, out string access_token, out string refresh_token, out int expires_in, out int iat)
         {
             int status = 0;
-
-            string domain = ConfigurationManager.AppSettings["domain"];
-            string host = ConfigurationManager.AppSettings["host"];
-            string dns_provider = ConfigurationManager.AppSettings["dns_provider"];
-            string urlAPI = ConfigurationManager.AppSettings["urlAPI"];
+            iat = 0;
+            expires_in = 0;
+            refresh_token = null;
+            access_token = null;
 
             string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + domain + "&hosts=" + host + "&dns_provider=" + dns_provider;
 
-            string url = urlAPI + "/v2/oauth/access_token?code=" + input + "&grant_type=authorization_code&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
+            string url = urlAPI + "/v2/oauth/access_token?code=" + code + "&grant_type=authorization_code&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
             string json = RestAPIHelper.RestAPIHelper.POST(url, out status);
             if (status >= 300)
@@ -60,13 +38,65 @@ namespace OAuthHelper
             var jss = new JavaScriptSerializer();
             var table = jss.Deserialize<dynamic>(json);
 
-            AddUpdateAppSettings("access_token", table["access_token"]);
-            AddUpdateAppSettings("refresh_token", table["refresh_token"]);
-            AddUpdateAppSettings("expires_in", table["expires_in"].ToString());
-            Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-            AddUpdateAppSettings("iat", unixTimestamp.ToString());
+
+            access_token = table["access_token"];
+            refresh_token = table["refresh_token"];
+            expires_in = table["expires_in"];
+            iat = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
             return true;
+        }
+
+        static public string GetDomainConnectRecord(string host)
+        {
+            var client = new LookupClient();
+            client.UseCache = true;
+
+            var result = client.Query("_domainconnect." + host, QueryType.TXT);
+
+            foreach (var answer in result.Answers)
+            {
+                if (answer.RecordType == DnsClient.Protocol.ResourceRecordType.TXT)
+                {
+                    DnsClient.Protocol.TxtRecord txtRecord = (DnsClient.Protocol.TxtRecord)answer;
+
+                    return ((string[])txtRecord.Text)[0];
+                }
+            }
+
+            return null;
+
+        }
+
+        static public bool GetConfig(string domain, out string providerName, out string urlAPI, out string urlAsyncUX)
+        {
+            providerName = null;
+            urlAPI = null;
+            urlAsyncUX = null;
+
+            string dcr = GetDomainConnectRecord(domain);
+
+            if (dcr != null)
+            {
+                string url = "https://" + dcr + "/v2/" + "arnoldblinn.com" + "/settings";
+                int status = 0;
+                string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
+                if (json != null && status >= 200 && status < 300)
+                {
+                    var jss = new JavaScriptSerializer();
+                    var table = jss.Deserialize<dynamic>(json);
+
+                    providerName = table["providerName"];
+                    urlAPI = table["urlAPI"];
+                    urlAsyncUX = table["urlAsyncUX"];
+
+
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
     }

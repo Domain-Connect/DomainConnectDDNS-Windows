@@ -5,7 +5,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GoDaddyDNSUpdate
+namespace DomainConnectDDNSUpdate
 {
     static class Program
     {
