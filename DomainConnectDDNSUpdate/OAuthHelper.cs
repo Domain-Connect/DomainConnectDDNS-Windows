@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Web.Script.Serialization;
 using System.Net;
+using System.Collections.Generic;
 
 namespace OAuthHelper
 {
@@ -51,12 +52,12 @@ namespace OAuthHelper
 
             string url = urlAPI + "/v2/oauth/access_token?code=" + input + "&grant_type=authorization_code&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
-            string json = RestAPIHelper.RestAPIHelper.POST(url, out status);
+            string json = RestAPIHelper.RestAPIHelper.POST(url, null, out status);
             if (status >= 300)
             {
                 return false;
             }
-
+            
             var jss = new JavaScriptSerializer();
             var table = jss.Deserialize<dynamic>(json);
 
@@ -69,5 +70,22 @@ namespace OAuthHelper
             return true;
         }
 
+        public static string ApplyTemplate(string newIP, out int status)
+        {
+            string domain = ConfigurationManager.AppSettings["domain"];
+            string host = ConfigurationManager.AppSettings["host"];
+            string urlAPI = ConfigurationManager.AppSettings["urlAPI"];
+            string access_token = ConfigurationManager.AppSettings["access_token"];
+
+            // Update the DNS code. Change the result flag.
+            string url = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + domain + "&host=" + host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
+
+            //Add the authorization header.
+            Dictionary<string, string> headers = new Dictionary<string, string>();
+            headers.Add("Authorization", "Bearer " + access_token);
+
+            // Apply template.
+            return RestAPIHelper.RestAPIHelper.POST(url, headers, out status);
+        }
     }
 }

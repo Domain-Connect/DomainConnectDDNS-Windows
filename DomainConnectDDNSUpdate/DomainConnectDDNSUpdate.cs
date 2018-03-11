@@ -50,17 +50,11 @@ namespace GoDaddyDNSUpdate
         //
         public bool UpdateIP(string newIP)
         {
-            /*
-            bool result = false;
             int status = 0;
 
-            string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + this.domain + "&hosts=" + this.host + "&dns_provider=" + this.dns_provider;
+            string response = OAuthHelper.OAuthHelper.ApplyTemplate(newIP, out status);
 
-            string url = this.urlAPI + "/v2/oauth/access_token?code=" + this.access_token + "&grant_type=authorization_code&client_id=" + this.cli + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + redirect_url;
-
-            result = GoDaddyRestAPI.RestAPIHelper.UpdateGoDaddyIP(this.domainName, this.apiKey, "A", this.aName, newIP, this.aRecordTemplate, out status);            
-            
-            if (!result)
+            if (response == null || status < 200 || status >= 300)
             {
                 eventLog1.WriteEntry("Failure to update IP", EventLogEntryType.Error);
 
@@ -75,40 +69,18 @@ namespace GoDaddyDNSUpdate
 
                     this.monitoring = false;
                 }
-                    
+
                 return false;
             }
             else
-            { 
-                this.goDaddyIP = newIP;
-
+            {
                 this.numMonitorFails = 0;
 
                 eventLog1.WriteEntry("IP Updated to " + newIP);
 
                 return true;
             }
-            */
-            return true;
-        }
-
-        static void AddUpdateAppSettings(string key, string value)
-        {
-            var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            var settings = configFile.AppSettings.Settings;
-            if (settings[key] == null)
-            {
-                settings.Add(key, value);
-            }
-            else
-            {
-                settings[key].Value = value;
-            }
-            configFile.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-        }
-
-        
+        }        
         
         //-------------------------------------------------------
         // InitService
