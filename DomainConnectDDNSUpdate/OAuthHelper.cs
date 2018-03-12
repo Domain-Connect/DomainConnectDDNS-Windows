@@ -17,17 +17,20 @@ namespace OAuthHelper
         // Given an input of either a response code from an oauth authorization, or a refresh token,
         // will fetch the access_token and a refresh_token using oauth
         //
-        static public bool GetTokens(string code, string domain, string host, string dns_provider, string urlAPI, out string access_token, out string refresh_token, out int expires_in, out int iat)
+        static public bool GetTokens(string code, string domain, string host, string dns_provider, string urlAPI, bool use_refresh, out string access_token, out string refresh_token, out int expires_in, out int iat)
         {
             int status = 0;
             iat = 0;
             expires_in = 0;
+            string grant = "authorization_code";
+            if (use_refresh) grant = "refresh_token";
+
             refresh_token = null;
             access_token = null;
 
             string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + domain + "&hosts=" + host + "&dns_provider=" + dns_provider;
 
-            string url = urlAPI + "/v2/oauth/access_token?code=" + code + "&grant_type=authorization_code&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
+            string url = urlAPI + "/v2/oauth/access_token?code=" + code + "&grant_type=" + grant + "&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
             string json = RestAPIHelper.RestAPIHelper.POST(url, null, out status);
             if (status >= 300)

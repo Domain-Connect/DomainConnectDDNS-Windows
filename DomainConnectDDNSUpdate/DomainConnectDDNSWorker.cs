@@ -45,6 +45,28 @@ namespace DomainConnectDDNSUpdate
             }
         }
 
+        public void RefreshToken()
+        {
+            string new_access, new_refresh;
+            int exp_in, iat;
+
+            OAuthHelper.OAuthHelper.GetTokens(this.refresh_token, this.domain, this.host, this.provider_name, this.urlAPI, true, out new_access, out new_refresh, out exp_in, out iat);
+
+            RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            if (lkey == null)
+            {
+                this.WriteEvent("Unable to get configuration from registry", EventLogEntryType.Error);
+                // Don't mark as initialized....we'll keep trying in case data is written to registry later
+                return;
+            }
+
+            // Write new values to the registry.
+            lkey.SetValue("access_token", new_access);
+            lkey.SetValue("refresh_token", new_refresh);
+            lkey.SetValue("expires_in", exp_in);
+            lkey.SetValue("iat", iat);
+        }
+
         //-------------------------------------------------------
         // UpdateIP
         //
