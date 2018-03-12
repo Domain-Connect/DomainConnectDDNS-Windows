@@ -62,7 +62,18 @@ namespace gddnsserviceuserinfo
        
         private void Button_Click_OK(object sender, RoutedEventArgs e)
         {
-          
+            // Verify we can write to the registry
+            RegistryKey lkey = Registry.LocalMachine;
+            try
+            {
+                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
+
+                return;
+            }
 
             string domainnameText = this.domainname.Text.Trim();
             string subdomainnameText = this.subdomainname.Text.Trim();
@@ -81,6 +92,7 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
+            // Get Domain Connect Config Settings for provider
             string providerName, urlAPI, urlAsyncUX;
             if (!OAuthHelper.OAuthHelper.GetConfig(domainnameText, out providerName, out urlAPI, out urlAsyncUX))
             {
@@ -89,21 +101,18 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-
-
-            // Verify we can write to the registry
-            RegistryKey lkey = Registry.LocalMachine;
-            try
+            // Verify our template is supported
+            string checkURL = urlAPI + "/v2/templates/providers/exampleservice.domainconnect.org/services/template1/";
+            int status = 0;
+            RestAPIHelper.RestAPIHelper.GET(checkURL, out status);
+            if (status != 200)
             {
-                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
+                this.Error.Content = "DNS Provider does not support Dynamic DNS Template";
 
                 return;
             }
 
+            // Write the values to the registry
             lkey.SetValue("domain_name", domainnameText);
             lkey.SetValue("host", subdomainnameText);
             lkey.SetValue("provider_name", providerName);
