@@ -102,7 +102,7 @@ namespace gddnsserviceuserinfo
             }
 
             // Verify our template is supported
-            string checkURL = urlAPI + "/v2/templates/providers/exampleservice.domainconnect.org/services/template1/";
+            string checkURL = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1";
             int status = 0;
             RestAPIHelper.RestAPIHelper.GET(checkURL, out status);
             if (status != 200)
@@ -171,7 +171,7 @@ namespace gddnsserviceuserinfo
             string refresh_token;
             int iat;
             int expires_in;
-            if (!OAuthHelper.OAuthHelper.GetTokens(accesscode, domain_name, host, provider_name, urlAPI, out access_token, out refresh_token, out expires_in, out iat))
+            if (!OAuthHelper.OAuthHelper.GetTokens(accesscode, domain_name, host, provider_name, urlAPI, false, out access_token, out refresh_token, out expires_in, out iat))
             {
                 this.Error.Content = "Error using access code. Please try again.";
                 return;
