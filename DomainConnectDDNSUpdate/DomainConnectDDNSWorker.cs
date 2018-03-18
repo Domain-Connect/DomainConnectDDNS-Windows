@@ -26,7 +26,9 @@ namespace DomainConnectDDNSUpdate
         private string access_token;            // Access token for oauth
         private string refresh_token;           // Refresh token for oauth
         private string urlAPI;
-        private string provider_name;
+        private string dns_provider;
+        private int iat;
+        private int expires_in;
 
         const string providerId = "exampleservice.domainconnect.org";
 
@@ -35,6 +37,23 @@ namespace DomainConnectDDNSUpdate
         public DomainConnectDDNSWorker(EventLog eventLog)
         {
             this.eventLog1 = eventLog;
+
+            RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            if (lkey == null)
+            {
+                this.WriteEvent("Unable to get configuration from registry", EventLogEntryType.Error);
+                // Don't mark as initialized....we'll keep trying in case data is written to registry later
+                return;
+            }
+
+            this.refresh_token = (string)lkey.GetValue("refresh_token", null);
+            this.access_token = (string)lkey.GetValue("access_token", null);
+            this.domain = (string)lkey.GetValue("domain", null);
+            this.host = (string)lkey.GetValue("host", null);
+            this.dns_provider = (string)lkey.GetValue("dns_provider", null);
+            this.urlAPI = (string)lkey.GetValue("urlAPI", null);
+            this.iat = (int)lkey.GetValue("iat", 0);
+            this.expires_in = (int)lkey.GetValue("expires_in", 0);
         }
 
         private void WriteEvent(string message, EventLogEntryType elt = EventLogEntryType.Information)
@@ -47,10 +66,8 @@ namespace DomainConnectDDNSUpdate
 
         public void RefreshToken()
         {
-            string new_access, new_refresh;
-            int exp_in, iat;
-
-            OAuthHelper.OAuthHelper.GetTokens(this.refresh_token, this.domain, this.host, this.provider_name, this.urlAPI, true, out new_access, out new_refresh, out exp_in, out iat);
+            string access_token, refresh_token;
+            int expires_in, iat;
 
             RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
             if (lkey == null)
@@ -59,11 +76,18 @@ namespace DomainConnectDDNSUpdate
                 // Don't mark as initialized....we'll keep trying in case data is written to registry later
                 return;
             }
+ 
+            OAuthHelper.OAuthHelper.GetTokens(this.refresh_token, this.domain, this.host, this.dns_provider, this.urlAPI, true, out access_token, out refresh_token, out expires_in, out iat);
+
+            this.refresh_token = refresh_token;
+            this.access_token = access_token;
+            this.expires_in = expires_in;
+            this.iat = iat;
 
             // Write new values to the registry.
-            lkey.SetValue("access_token", new_access);
-            lkey.SetValue("refresh_token", new_refresh);
-            lkey.SetValue("expires_in", exp_in);
+            lkey.SetValue("access_token", access_token);
+            lkey.SetValue("refresh_token", refresh_token);
+            lkey.SetValue("expires_in", expires_in);
             lkey.SetValue("iat", iat);
         }
 
@@ -130,19 +154,12 @@ namespace DomainConnectDDNSUpdate
 
                 return;
             }
-
-            this.domain = (string)lkey.GetValue("domain_name");
-            this.host = (string)lkey.GetValue("host");
-            this.access_token = (string)lkey.GetValue("access_token");
-            this.refresh_token = (string)lkey.GetValue("refresh_token");
-            this.provider_name = (string)lkey.GetValue("provider_name");
-            this.urlAPI = (string)lkey.GetValue("urlAPI");
-
+            
             if (this.domain == null || this.domain == "" ||
                 this.access_token == null || this.access_token == "" ||
                 this.refresh_token == null || this.refresh_token == "" ||
-                this.provider_name == null || this.provider_name == "" ||
-                this.urlAPI == null || this.provider_name == null)
+                this.dns_provider == null || this.dns_provider == "" ||
+                this.urlAPI == null || this.dns_provider == null)
             {
                 this.WriteEvent("Initiaize failure: missing data. Run installer.", EventLogEntryType.Error);
 

@@ -14,7 +14,8 @@ namespace Tester
         static void Main(string[] args)
         {
             DomainConnectDDNSUpdate.DomainConnectDDNSWorker worker = new DomainConnectDDNSUpdate.DomainConnectDDNSWorker(null);
-            worker.DoWork();
+            //worker.DoWork();
+            worker.RefreshToken();
         }
     }
 }

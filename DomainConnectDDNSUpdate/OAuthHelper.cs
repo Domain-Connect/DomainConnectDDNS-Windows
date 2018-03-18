@@ -23,14 +23,19 @@ namespace OAuthHelper
             iat = 0;
             expires_in = 0;
             string grant = "authorization_code";
-            if (use_refresh) grant = "refresh_token";
+            string code_key = "code";
+            if (use_refresh)
+            {
+                grant = "refresh_token";
+                code_key = "refresh_token";
+            }
 
             refresh_token = null;
             access_token = null;
 
             string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + domain + "&hosts=" + host + "&dns_provider=" + dns_provider;
 
-            string url = urlAPI + "/v2/oauth/access_token?code=" + code + "&grant_type=" + grant + "&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
+            string url = urlAPI + "/v2/oauth/access_token?" + code_key + "=" + code + "&grant_type=" + grant + "&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
             string json = RestAPIHelper.RestAPIHelper.POST(url, null, out status);
             if (status >= 300)
