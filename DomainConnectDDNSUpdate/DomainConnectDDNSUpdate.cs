@@ -14,15 +14,14 @@ using System.Configuration;
 
 namespace DomainConnectDDNSUpdate
 {
-   
-
     public partial class DomainConnectDDNSUpdate : ServiceBase
     {
         // Timer for the updates
         private Timer timer;
-        private int interval = 600000;              // Every 10 minutes 
+        private int longInterval = 600000;          // Every 10 minutes 
         private int shortinterval = 60000;          // Every 1 minute 
 
+        // Worker object
         DomainConnectDDNSWorker worker;
 
         //----------------------------------------------------
@@ -46,11 +45,9 @@ namespace DomainConnectDDNSUpdate
             }
             else if (this.worker.monitoring)
             {
-                timer.Interval = interval;
+                timer.Interval = longInterval;
                 timer.Start();
-            }
-
-            
+            }            
         }
 
         //--------------------------------------------------------------

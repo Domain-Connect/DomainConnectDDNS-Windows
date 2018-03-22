@@ -38,7 +38,7 @@ namespace OAuthHelper
             string url = urlAPI + "/v2/oauth/access_token?" + code_key + "=" + code + "&grant_type=" + grant + "&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
             string json = RestAPIHelper.RestAPIHelper.POST(url, null, out status);
-            if (status >= 300)
+            if (status < 200 || status >= 300)
             {
                 return false;
             }
@@ -53,6 +53,23 @@ namespace OAuthHelper
             iat = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
 
             return true;
+        }
+
+        static public bool UpdateIP(string domain_name, string host, string urlAPI, string access_token, string newIP)
+        {
+            int status = 0;
+
+            string templateUrl = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + domain_name + "&host=" + host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
+            Dictionary<string, string> headers = new Dictionary<string, string>();
+            headers.Add("Authorization", "Bearer " + access_token);
+            string response = RestAPIHelper.RestAPIHelper.POST(templateUrl, headers, out status);
+
+            if (response != null && status >= 200 && status < 300)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         static public string GetDomainConnectRecord(string host)

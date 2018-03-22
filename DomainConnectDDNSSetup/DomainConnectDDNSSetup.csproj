@@ -69,6 +69,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="..\DomainConnectDDNSUpdate\DomainConnectDDNSSettings.cs">
+      <Link>DomainConnectDDNSSettings.cs</Link>
+    </Compile>
     <Compile Include="..\DomainConnectDDNSUpdate\OAuthHelper.cs">
       <Link>OAuthHelper.cs</Link>
     </Compile>

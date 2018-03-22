@@ -17,43 +17,23 @@ namespace DomainConnectDDNSUpdate
         public bool initialized = false;
         private int numInitializeFails = 0;
 
-        // Service is good for monitoring DNS changes
+        // Service is good for monitoring DNS changes or token refreshes
         public bool monitoring = false;
+        private int numUpdateFails = 0;
+        private int numRefreshFails = 0;
 
-        // Values from the registry        
-        private string domain;                  // Name of the domain
-        private string host;                    // Host (sub-domain)
-        private string access_token;            // Access token for oauth
-        private string refresh_token;           // Refresh token for oauth
-        private string urlAPI;
-        private string dns_provider;
-        private int iat;
-        private int expires_in;
-
-        const string providerId = "exampleservice.domainconnect.org";
-
+        // Settings
+        DomainConnectDDNSSettings settings;
+        
+        // Event log for logging errors and events
         EventLog eventLog1;
 
         public DomainConnectDDNSWorker(EventLog eventLog)
         {
             this.eventLog1 = eventLog;
 
-            RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
-            if (lkey == null)
-            {
-                this.WriteEvent("Unable to get configuration from registry", EventLogEntryType.Error);
-                // Don't mark as initialized....we'll keep trying in case data is written to registry later
-                return;
-            }
-
-            this.refresh_token = (string)lkey.GetValue("refresh_token", null);
-            this.access_token = (string)lkey.GetValue("access_token", null);
-            this.domain = (string)lkey.GetValue("domain", null);
-            this.host = (string)lkey.GetValue("host", null);
-            this.dns_provider = (string)lkey.GetValue("dns_provider", null);
-            this.urlAPI = (string)lkey.GetValue("urlAPI", null);
-            this.iat = (int)lkey.GetValue("iat", 0);
-            this.expires_in = (int)lkey.GetValue("expires_in", 0);
+            this.settings = new DomainConnectDDNSSettings();
+            this.settings.Load("settings.txt");
         }
 
         private void WriteEvent(string message, EventLogEntryType elt = EventLogEntryType.Information)
@@ -64,112 +44,95 @@ namespace DomainConnectDDNSUpdate
             }
         }
 
-        public void RefreshToken()
+        //---------------------------------------------------
+        // RefreshToken
+        //
+        // Will refresh the access token using oAuth
+        //
+        public bool RefreshToken()
         {
-            string access_token, refresh_token;
-            int expires_in, iat;
+            string new_access_token, new_refresh_token;
+            int new_expires_in, new_iat;
 
-            RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
-            if (lkey == null)
+            if (OAuthHelper.OAuthHelper.GetTokens((string)this.settings.ReadValue("refresh_token", ""),
+                                    (string)this.settings.ReadValue("domain_name", ""),
+                                    (string)this.settings.ReadValue("host", ""),
+                                    (string)this.settings.ReadValue("provider_name", ""),
+                                    (string)this.settings.ReadValue("urlAPI", ""),
+                                    true,
+                                    out new_access_token, out new_refresh_token, out new_expires_in, out new_iat))
             {
-                this.WriteEvent("Unable to get configuration from registry", EventLogEntryType.Error);
-                // Don't mark as initialized....we'll keep trying in case data is written to registry later
-                return;
+                this.settings.WriteValue("refresh_token", new_refresh_token);
+                this.settings.WriteValue("access_token", new_access_token);
+                this.settings.WriteValue("expires_in", new_expires_in);
+                this.settings.WriteValue("iat", new_iat);
+                this.settings.Save("settings.txt");
+
+                return true;
             }
- 
-            OAuthHelper.OAuthHelper.GetTokens(this.refresh_token, this.domain, this.host, this.dns_provider, this.urlAPI, true, out access_token, out refresh_token, out expires_in, out iat);
 
-            this.refresh_token = refresh_token;
-            this.access_token = access_token;
-            this.expires_in = expires_in;
-            this.iat = iat;
-
-            // Write new values to the registry.
-            lkey.SetValue("access_token", access_token);
-            lkey.SetValue("refresh_token", refresh_token);
-            lkey.SetValue("expires_in", expires_in);
-            lkey.SetValue("iat", iat);
+            return false;
         }
 
         //-------------------------------------------------------
         // UpdateIP
         //
-        // Updates the IP with with the DNS Provider
+        // Updates the IP with with the DNS Provider using oAuth
         //
         public bool UpdateIP(string newIP)
-        {
-            int status = 0;
-
+        {           
             // Apply template and store the response.
-            string templateUrl = this.urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + this.domain + "&host=" + this.host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
-            Dictionary<string, string> headers = new Dictionary<string, string>();
-            headers.Add("Authorization", "Bearer " + this.access_token);
-            string response = RestAPIHelper.RestAPIHelper.POST(templateUrl, headers, out status);
+            string urlAPI = (string)this.settings.ReadValue("urlAPI", "");
+            string domain_name = (string)this.settings.ReadValue("domain_name", "");
+            string host = (string)this.settings.ReadValue("host", "");
+            string access_token = (string)this.settings.ReadValue("access_token", "");
 
-            if (response == null || status < 200 || status >= 300)
-            {
-                this.WriteEvent("Failure to update IP", EventLogEntryType.Error);
-
-                // Don't penalize if trys to update if the internet is down, or the server is down
-                if (status != 0 || status < 500)
-                    this.numInitializeFails++;
-
-                // After 10 failures, we stop retrying
-                if (this.numInitializeFails > 10)
-                {
-                    this.WriteEvent("Failure to update IP threshold reached. Service must be restarted to try again.", EventLogEntryType.Error);
-
-                    this.monitoring = false;
-                }
-
-                return false;
-            }
-            else
-            {
-                this.numInitializeFails = 0;
-
-                this.WriteEvent("IP Updated to " + newIP);
+            if (OAuthHelper.OAuthHelper.UpdateIP(domain_name, host, urlAPI, access_token, newIP))
+            { 
+                this.currentIP = newIP;
 
                 return true;
             }
-        }
 
+            return false;          
+        }
 
         //-------------------------------------------------------
         // InitService
         //
         // Initializes the service
         //
-        private void InitService()
+        public void InitService()
         {
             int status = 0;
 
-            RegistryKey lkey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
+            this.settings = new DomainConnectDDNSSettings();
+            this.settings.Load("settings.txt");
 
-            if (lkey == null)
+            string domain_name = (string)this.settings.ReadValue("domain_name", null);
+            string access_token = (string)this.settings.ReadValue("access_token", null);
+            string refresh_token = (string)this.settings.ReadValue("refresh_token", null);
+            string provider_name = (string)this.settings.ReadValue("provider_name", null);
+            string urlAPI = (string)this.settings.ReadValue("urlAPI", null);
+            string host = (string)this.settings.ReadValue("host", null);
+
+            if (String.IsNullOrEmpty(domain_name) ||
+                String.IsNullOrEmpty(access_token) ||
+                String.IsNullOrEmpty(refresh_token) ||
+                String.IsNullOrEmpty(provider_name) ||
+                String.IsNullOrEmpty(urlAPI))             
             {
-                this.WriteEvent("Unable to get configuration from registry", EventLogEntryType.Error);
+                this.WriteEvent("Initiaize failure: missing data. Run installer and restart service.", EventLogEntryType.Error);
 
-                // Don't mark as initialized....we'll keep trying in case data is written to registry later
-
-                return;
-            }
-            
-            if (this.domain == null || this.domain == "" ||
-                this.access_token == null || this.access_token == "" ||
-                this.refresh_token == null || this.refresh_token == "" ||
-                this.dns_provider == null || this.dns_provider == "" ||
-                this.urlAPI == null || this.dns_provider == null)
-            {
-                this.WriteEvent("Initiaize failure: missing data. Run installer.", EventLogEntryType.Error);
+                this.initialized = true;
 
                 return;
             }
 
             // Query the initial (current) IP from DNS. Null is an error, "" means no current value
-            string fqdn = this.domain;
-            if (this.host != null && host != "")
-                fqdn = this.host + "." + fqdn;
+            string fqdn = domain_name;
+            if (!String.IsNullOrEmpty(host))
+                fqdn = host + "." + fqdn;
             this.currentIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
 
             if (this.currentIP == null)
@@ -183,21 +146,100 @@ namespace DomainConnectDDNSUpdate
                 // After 10 tries to init that fail, we give up
                 if (this.numInitializeFails > 10)
                 {
-                    this.WriteEvent("Threshold for attempted initialize reached. Restart service to try again.", EventLogEntryType.Error);
+                    this.WriteEvent("Initialize failure: threshold for attempted initialize reached. Restart service.", EventLogEntryType.Error);
                     this.initialized = true;
                 }
 
                 return;
             }
 
-            // Service successfully initalized
+            // Service successfully initalized. Mark it sas such and start monitoring
             this.initialized = true;
             this.monitoring = true;
 
-            this.WriteEvent("Initialized and running.");
-
+            this.WriteEvent("Initialize success: Initialized and running.", EventLogEntryType.Information);
         }
 
+        //------------------------------------------
+        // CheckIP
+        //
+        // Checks for IP changes and does the update
+        //
+        public void CheckIP()
+        {
+            // See if our IP changed
+            int status = 0;
+            string newIP = null;
+            try
+            {
+                newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
+            }
+            catch
+            {
+                status = 0;
+            }
+
+            // Update the IP if it has changed
+            if (newIP != null &&
+                (newIP != this.currentIP && status >= 200 && status < 300))
+            {
+                this.WriteEvent("Updating IP to " + newIP);
+                if (!UpdateIP(newIP))                
+                {
+                    this.numUpdateFails++;
+                    this.WriteEvent("Updating IP failed.", EventLogEntryType.Error);
+
+                    // After 10 failures, we stop updating
+                    if (this.numUpdateFails > 10)
+                    {
+                        this.WriteEvent("Updating IP threshold reached. Must restart service.", EventLogEntryType.Error);
+
+                        this.monitoring = false;
+                    }
+                }
+                else
+                {
+                    this.numUpdateFails = 0;
+                }
+            }
+        }
+
+        //----------------------------------
+        // CheckToken
+        //
+        // Will check if the token is relatively "fresh" for doing updates
+        //
+        public void CheckToken()
+        {
+            // See if our token is in good shape. Refresh if we are getting close to expiry
+            int expires_in = (int)this.settings.ReadValue("expires_in", 0);
+            int iat = (int)this.settings.ReadValue("iat", 0);
+            int now = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            if (expires_in * 7 / 8 + iat < now)
+            {
+                this.WriteEvent("Refreshing access token", EventLogEntryType.Information);
+                if (!this.RefreshToken())
+                {
+                    this.WriteEvent("Refreshing access failed", EventLogEntryType.Error);
+                    this.numRefreshFails++;
+                    if (this.numRefreshFails > 10)
+                    {
+                        this.WriteEvent("Refreshing access token failed threshold reached. Must restart service.");
+
+                        this.monitoring = false;
+                    }
+                }
+                else
+                {
+                    this.numRefreshFails = 0;
+                }
+            }
+        }
+
+        //---------------------------------------
+        // DoWork
+        //
+        // This is the main function that does the work of the service on the timer
         public void DoWork()
         {
             // If we haven't initialized, try to initialize now
@@ -206,27 +248,16 @@ namespace DomainConnectDDNSUpdate
                 this.InitService();
             }
 
+            // If we are monitoring (after successful initialize), check for token refresh
             if (this.monitoring)
             {
-                int status = 0;
-                string newIP = null;
-                try
-                {
-                    // See if our IP has changed
-                    newIP = RestAPIHelper.RestAPIHelper.GET("http://api.ipify.org", out status);
-                }
-                catch
-                {
-                    status = 0;
-                }
+                this.CheckToken();
+            }
 
-                // Update the IP if it has changed
-                if (newIP != null &&
-                    (newIP != this.currentIP && status >= 200 && status < 300)) // We need to add a || we haven't updated in a long time
-                {
-                    UpdateIP(newIP);
-                    this.currentIP = newIP;
-                }
+            // If we are monitoring (after initialize and token refresh), check for IP changes
+            if (this.monitoring)
+            {
+                this.CheckIP();
             }
         }
 

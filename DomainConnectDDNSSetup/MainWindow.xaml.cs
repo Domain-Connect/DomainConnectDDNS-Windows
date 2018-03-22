@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using System.Net;
 using System.IO;
 using OAuthHelper;
+using DomainConnectDDNSUpdate;
 
 
 namespace gddnsserviceuserinfo
@@ -27,15 +28,18 @@ namespace gddnsserviceuserinfo
     /// </summary>
     public partial class MainWindow : Window
     {
+        private DomainConnectDDNSSettings settings;
+
         public MainWindow()
         {
             InitializeComponent();
 
             // Make sure that the dialog is in front
             Application.Current.MainWindow.Activate();
+
+            this.settings = new DomainConnectDDNSSettings();
+            this.settings.Load("settings.txt");
         }
-
-
 
         private void Button_Click_Cancel(object sender, RoutedEventArgs e)
         {                        
@@ -61,20 +65,7 @@ namespace gddnsserviceuserinfo
         }
        
         private void Button_Click_OK(object sender, RoutedEventArgs e)
-        {
-            // Verify we can write to the registry
-            RegistryKey lkey = Registry.LocalMachine;
-            try
-            {
-                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
-
-                return;
-            }
-
+        {            
             string domainnameText = this.domainname.Text.Trim();
             string subdomainnameText = this.subdomainname.Text.Trim();
 
@@ -112,12 +103,14 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            // Write the values to the registry
-            lkey.SetValue("domain_name", domainnameText);
-            lkey.SetValue("host", subdomainnameText);
-            lkey.SetValue("provider_name", providerName);
-            lkey.SetValue("urlAPI", urlAPI);
-
+            // Write the settings
+            this.settings.Clear();
+            this.settings.WriteValue("domain_name", domainnameText);
+            this.settings.WriteValue("host", subdomainnameText);
+            this.settings.WriteValue("provider_name", providerName);
+            this.settings.WriteValue("urlAPI", urlAPI);
+            this.settings.Save("settings.txt");
+            
             // Get the value of the _domainconnect record
             string url = urlAsyncUX + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1?";
             url += ("domain=" + domainnameText + "&client_id=exampleservice.domainconnect.org&scope=template1");
@@ -149,24 +142,11 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            // Verify we can write to the registry
-            RegistryKey lkey = Registry.LocalMachine;
-            try
-            {
-                lkey = lkey.CreateSubKey(@"SYSTEM\CurrentControlSet\services\DomainConnectDDNSUpdate\Config");
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                this.Error.Content = "Unable to save values. Please run application with Administrator privilages.";
-
-                return;
-            }
-
-            string domain_name = (string)lkey.GetValue("domain_name");
-            string host = (string)lkey.GetValue("host");
-            string provider_name = (string)lkey.GetValue("provider_name");
-            string urlAPI = (string)lkey.GetValue("urlAPI");
-
+            string domain_name = (string)this.settings.ReadValue("domain_name", "");
+            string host = (string)this.settings.ReadValue("host", "");
+            string provider_name = (string)this.settings.ReadValue("provider_name", "");
+            string urlAPI = (string)this.settings.ReadValue("urlAPI", "");
+          
             string access_token;
             string refresh_token;
             int iat;
@@ -177,11 +157,12 @@ namespace gddnsserviceuserinfo
                 return;
             }
 
-            lkey.SetValue("access_token", access_token);
-            lkey.SetValue("refresh_token", refresh_token);
-            lkey.SetValue("iat", iat, RegistryValueKind.DWord);
-            lkey.SetValue("expires_in", expires_in, RegistryValueKind.DWord);
-
+            this.settings.WriteValue("access_token", access_token);
+            this.settings.WriteValue("refresh_token", refresh_token);
+            this.settings.WriteValue("iat", iat);
+            this.settings.WriteValue("expires_in", expires_in);
+            this.settings.Save("settings.txt");
+            
             // -i is passed from installer.  When run from command line, tell the user they need to restart
             string[] args = Environment.GetCommandLineArgs();            
             if (!args.Contains("-i"))
