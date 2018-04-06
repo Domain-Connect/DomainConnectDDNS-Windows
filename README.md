@@ -55,5 +55,11 @@ https://dynamicdns.domainconnect.org/ddnscode
 
 ## Summary
 
-This application will work with any DNS Provider that onboards the Domain Connect template https://github.com/Domain-Connect/Templates/blob/master/domainconnect.org.dynamicdns.json for an oAuth call using the secret of "xxxx" and a redirect url of https://dynamicdns.domainconnect.org/ddnscode should work.
+This application will work with any DNS Provider that onboards the Domain Connect template 
+
+Template: https://github.com/Domain-Connect/Templates/blob/master/domainconnect.org.dynamicdns.json 
+
+Secret: inconceivable
+
+Return URI: https://dynamicdns.domainconnect.org/ddnscode
 
