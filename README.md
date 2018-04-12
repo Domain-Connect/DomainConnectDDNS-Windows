@@ -63,3 +63,5 @@ Secret: inconceivable
 
 Return URI: https://dynamicdns.domainconnect.org/ddnscode
 
+client_id: domainconnect.org
+
