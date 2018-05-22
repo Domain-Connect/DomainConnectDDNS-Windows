@@ -7,12 +7,12 @@ using System.Windows;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("gddnsserviceuserinfo")]
+[assembly: AssemblyTitle("DomainConnectDDNSSetup")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("GoDaddy.com, LLC")]
-[assembly: AssemblyProduct("gddnsserviceuserinfo")]
-[assembly: AssemblyCopyright("Copyright © GoDaddy.com, LLC 2015")]
+[assembly: AssemblyCompany("DomainConnect.org")]
+[assembly: AssemblyProduct("DomainConnectDDNSSetup")]
+[assembly: AssemblyCopyright("Copyright © DomainConnect.org 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

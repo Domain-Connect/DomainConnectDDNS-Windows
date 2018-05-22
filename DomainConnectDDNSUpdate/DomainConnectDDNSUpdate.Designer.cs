@@ -31,9 +31,9 @@
             this.eventLog1 = new System.Diagnostics.EventLog();
             ((System.ComponentModel.ISupportInitialize)(this.eventLog1)).BeginInit();
             // 
-            // GoDaddyDNSUpdate
+            // DomainConnectDDNSUpdate
             // 
-            this.ServiceName = "GoDaddyDNSUpdate";
+            this.ServiceName = "DomainConnectDDNSUpdate";
             ((System.ComponentModel.ISupportInitialize)(this.eventLog1)).EndInit();
 
         }

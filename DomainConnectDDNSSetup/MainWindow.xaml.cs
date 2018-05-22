@@ -1,25 +1,10 @@
 ﻿using System;
-using Microsoft.Win32;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Net;
-using System.IO;
-using OAuthHelper;
 using DomainConnectDDNSUpdate;
 
-
-namespace gddnsserviceuserinfo
+namespace DomainConnectDDNSSetup
 {
 
 
@@ -93,7 +78,7 @@ namespace gddnsserviceuserinfo
             }
 
             // Verify our template is supported
-            string checkURL = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1";
+            string checkURL = urlAPI + "/v2/domainTemplates/providers/domainconnect.org/services/dynamicdns";
             int status = 0;
             RestAPIHelper.RestAPIHelper.GET(checkURL, out status);
             if (status != 200)
@@ -110,12 +95,21 @@ namespace gddnsserviceuserinfo
             this.settings.WriteValue("provider_name", providerName);
             this.settings.WriteValue("urlAPI", urlAPI);
             this.settings.Save("settings.txt");
-            
-            // Get the value of the _domainconnect record
-            string url = urlAsyncUX + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1?";
-            url += ("domain=" + domainnameText + "&client_id=exampleservice.domainconnect.org&scope=template1");
 
-            string redirect_uri = "http://exampleservice.domainconnect.org/ddns_oauth_code?domain=" + domainnameText + "&hosts=" + subdomainnameText + "&dns_provider=" + providerName + "&code_only=1";
+            // Form the URL for getting consent
+            string url;
+            if (providerName.ToLower() == "godaddy" || providerName.ToLower() == "secureserver")
+            {
+                url = urlAsyncUX + "/v2/domainTemplates/providers/domainconnect.org/services/dynamicdns?";
+            }
+            else
+            {
+                url = urlAsyncUX + "/v2/domainTemplates/providers/domainconnect.org?";
+            }
+
+            url += ("domain=" + domainnameText + "&host=" + subdomainnameText + "&client_id=domainconnect.org&scope=dynamicdns");
+
+            string redirect_uri = "https://dynamicdns.domainconnect.org/ddnscode";
 
             url += "&redirect_uri=" + WebUtility.UrlEncode(redirect_uri);
 
@@ -166,7 +160,7 @@ namespace gddnsserviceuserinfo
             // -i is passed from installer.  When run from command line, tell the user they need to restart
             string[] args = Environment.GetCommandLineArgs();            
             if (!args.Contains("-i"))
-                MessageBox.Show("Settings applied. You must restart the GoDaddy DNS Update Service for changes to take affect.", "Restart Service");
+                MessageBox.Show("Settings applied. You must restart the Domain Connect DDNS Update Service for changes to take affect.", "Restart Service");
 
             // Exit application
             this.shuttingDown = true;

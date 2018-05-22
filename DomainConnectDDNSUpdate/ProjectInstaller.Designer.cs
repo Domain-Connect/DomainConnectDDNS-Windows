@@ -1,4 +1,4 @@
-﻿namespace GoDaddyDNSUpdate
+﻿namespace DomainConnectDDNSUpdate
 {
     partial class ProjectInstaller
     {
@@ -33,15 +33,15 @@
             // 
             // serviceProcessInstaller1
             // 
-            this.serviceProcessInstaller1.Account = System.ServiceProcess.ServiceAccount.LocalService;
+            this.serviceProcessInstaller1.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
             this.serviceProcessInstaller1.Password = null;
             this.serviceProcessInstaller1.Username = null;
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "GoDaddy DNS Update Service";
-            this.serviceInstaller1.DisplayName = "GoDaddy DNS Update Service";
-            this.serviceInstaller1.ServiceName = "GoDaddyDNSUpdate";
+            this.serviceInstaller1.Description = "Updates an A Record DNS Entry based on a dynamic IP address from your ISP";
+            this.serviceInstaller1.DisplayName = "Domain Connect DDNS Update";
+            this.serviceInstaller1.ServiceName = "DomainConnectDDNSUpdate";
             // 
             // ProjectInstaller
             // 

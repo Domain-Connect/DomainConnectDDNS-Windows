@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Web.Script.Serialization;
 using System.Net;
 using System.Collections.Generic;
@@ -8,9 +7,7 @@ using DnsClient;
 namespace OAuthHelper
 {
     public class OAuthHelper
-    {
-        const string providerId = "exampleservice.domainconnect.org";
-
+    {        
         //
         // GetTokens
         //
@@ -33,9 +30,9 @@ namespace OAuthHelper
             refresh_token = null;
             access_token = null;
 
-            string redirect_url = "http://exampleservice.domainconnect.org/async_oauth_response?domain=" + domain + "&hosts=" + host + "&dns_provider=" + dns_provider;
+            string redirect_url = "http://dynamicdns.domainconnect.org/ddnscode";
 
-            string url = urlAPI + "/v2/oauth/access_token?" + code_key + "=" + code + "&grant_type=" + grant + "&client_id=" + providerId + "&client_secret=DomainConnectGeheimnisSecretString&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
+            string url = urlAPI + "/v2/oauth/access_token?" + code_key + "=" + code + "&grant_type=" + grant + "&client_id=domainconnect.org" + "&client_secret=inconceivable&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 
             string json = RestAPIHelper.RestAPIHelper.POST(url, null, out status);
             if (status < 200 || status >= 300)
@@ -59,7 +56,7 @@ namespace OAuthHelper
         {
             int status = 0;
 
-            string templateUrl = urlAPI + "/v2/domainTemplates/providers/exampleservice.domainconnect.org/services/template1/apply?domain=" + domain_name + "&host=" + host + "&force=1&RANDOMTEXT=DynamicDNS&IP=" + newIP;
+            string templateUrl = urlAPI + "/v2/domainTemplates/providers/domainconnect.org/services/dynamicdns/apply?domain=" + domain_name + "&host=" + host + "&force=1&IP=" + newIP;
             Dictionary<string, string> headers = new Dictionary<string, string>();
             headers.Add("Authorization", "Bearer " + access_token);
             string response = RestAPIHelper.RestAPIHelper.POST(templateUrl, headers, out status);

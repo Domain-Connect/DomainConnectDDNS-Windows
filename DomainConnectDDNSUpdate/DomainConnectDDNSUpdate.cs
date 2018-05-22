@@ -1,16 +1,5 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.ServiceProcess;
-using System.Text;
+﻿using System.ServiceProcess;
 using System.Timers;
-using System.Web.Script.Serialization;
-using RestAPIHelper;
-using System.Configuration;
 
 namespace DomainConnectDDNSUpdate
 {
@@ -18,8 +7,9 @@ namespace DomainConnectDDNSUpdate
     {
         // Timer for the updates
         private Timer timer;
-        private int longInterval = 600000;          // Every 10 minutes 
-        private int shortinterval = 60000;          // Every 1 minute 
+        private int longInterval = 900001;          // Approximately 15 minutes, but a prime number because I'm a nerd.
+        private int shortInterval = 60041;          // Approximately 1 minute, but a prime number because I'm still a nerd.
+        private int tinyInterval = 1007;            // Approximately 10 seconds. Yup still prime.
 
         // Worker object
         DomainConnectDDNSWorker worker;
@@ -40,7 +30,7 @@ namespace DomainConnectDDNSUpdate
             // Re start the timer with short or standard interval depending on if we have initialized
             if (!this.worker.initialized)
             {
-                timer.Interval = shortinterval;
+                timer.Interval = shortInterval;
                 timer.Start();
             }
             else if (this.worker.monitoring)
@@ -57,12 +47,14 @@ namespace DomainConnectDDNSUpdate
         //
         protected override void OnStart(string[] args)
         {
-            eventLog1.WriteEntry("Started");
+            eventLog1.WriteEntry("DomainConnectDDNSUpdate: Service Started");
+
+            System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
 
             this.worker = new DomainConnectDDNSWorker(eventLog1);
 
             timer = new Timer();
-            timer.Interval = shortinterval;
+            timer.Interval = tinyInterval;
             timer.Elapsed += timer_Elapsed;
             timer.Start();
         }
@@ -70,7 +62,9 @@ namespace DomainConnectDDNSUpdate
         //-----------------------------------------------------------
         protected override void OnStop()
         {
+            
             timer.Stop();
+            eventLog1.WriteEntry("DomainConnectDDNSUpdate: Service Stopped");
         }
 
         //-----------------------------------------------------------

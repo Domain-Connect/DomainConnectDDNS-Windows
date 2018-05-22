@@ -1,19 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.Web.Script.Serialization;
-
+﻿
 namespace Tester
 {
     class Program
     {
         static void Main(string[] args)
         {
-            DomainConnectDDNSUpdate.DomainConnectDDNSWorker worker = new DomainConnectDDNSUpdate.DomainConnectDDNSWorker(null);
+            System.Diagnostics.EventLog eventLog1;
+
+            eventLog1 = new System.Diagnostics.EventLog();
+            if (!System.Diagnostics.EventLog.SourceExists("DomainConnectDDNSUpdate"))
+            {
+                System.Diagnostics.EventLog.CreateEventSource("DomainConnectDDNSUpdate", "");
+            }
+            eventLog1.Source = "DomainConnectDDNSUpdate";
+            eventLog1.Log = "";
+
+            DomainConnectDDNSUpdate.DomainConnectDDNSWorker worker = new DomainConnectDDNSUpdate.DomainConnectDDNSWorker(eventLog1);
 
             worker.InitService();
 

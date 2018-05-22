@@ -1,10 +1,5 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DomainConnectDDNSUpdate
 {
@@ -40,7 +35,7 @@ namespace DomainConnectDDNSUpdate
         {
             if (this.eventLog1 != null)
             {
-                this.WriteEvent(message, elt);
+                this.eventLog1.WriteEntry(message, elt);
             }
         }
 
@@ -157,7 +152,7 @@ namespace DomainConnectDDNSUpdate
             this.initialized = true;
             this.monitoring = true;
 
-            this.WriteEvent("Initialize success: Initialized and running.", EventLogEntryType.Information);
+            this.WriteEvent("Initialize success: Initialized and monitoring for changes.", EventLogEntryType.Information);
         }
 
         //------------------------------------------

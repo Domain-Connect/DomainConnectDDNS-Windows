@@ -1,4 +1,4 @@
-﻿<Window x:Class="gddnsserviceuserinfo.MainWindow"
+﻿<Window x:Class="DomainConnectDDNSSetup.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Domain Connect Dynamic DNS Update Service" Height="470.978" Width="531.849" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Closing="Window_Closing">

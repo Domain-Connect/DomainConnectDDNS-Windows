@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
 namespace DomainConnectDDNSUpdate
@@ -24,12 +21,14 @@ namespace DomainConnectDDNSUpdate
 
         public void Load(string fileName)
         {
+            string x = Directory.GetCurrentDirectory();
+            string y = System.Reflection.Assembly.GetExecutingAssembly().Location;
             try
             {
                 this.settings = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(fileName));
             }
-            catch (FileNotFoundException e)
-            {
+            catch (FileNotFoundException)
+            {                
                 this.settings = new Dictionary<string, object>();
             }
             catch (Exception)
