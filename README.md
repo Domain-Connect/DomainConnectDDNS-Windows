@@ -77,6 +77,33 @@ Click Start (to begin the service), and select "Automatic" as the Startup Type t
 
 Interesting events are logged to the Windows Event log.
 
+## The Project ###
+
+The project is a visual studio solution that consists of three projects.
+
+### DomainConnectDDNSSetup ###
+
+This is setup program that is run once. It collects the domain and host, and invokes a web browser to gain OAuth consent. Upon granting, 
+the browser is sent to a page which will display the oauth access token.  This should be copied and pasted back into the setup app.
+
+Clicking "Finish" in the setup program will exchange the access code for an oauth token.  This (and all other necessary data) are written to a 
+simple configuration file (settings.txt).
+
+### DomainConnectDDNSUpdate ###
+
+This is the Windows Service that monitors and updates the IP with the host.
+
+This sets a timer that monitors for DNS changes. The initial value is determined by doing a public DNS query. This is compared to 
+the IP address currently assigned to the home network (gotten through a call to ipify.org), and upon changes will be updated by applying the 
+Domain Connect template.
+
+Access is kept current by looking for expiration of the oauth token.
+
+### Tester ###
+
+This project is rather simplistic, and allows running most of the logic of the program from a command line. This is useful for development and 
+for debugging.
+
 ## DNS Provider Onboarding ##
 
 This application will work with any DNS Provider that onboards the service template. This can be found at:
