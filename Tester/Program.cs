@@ -23,11 +23,11 @@ namespace Tester
             {
                 if (worker.monitoring)
                 {
-                    worker.CheckToken();
+                    worker.CheckToken(true);
                 }
                 if (worker.monitoring)
                 {
-                    worker.CheckIP();
+                    worker.CheckIP(true);
                 }
             }            
         }

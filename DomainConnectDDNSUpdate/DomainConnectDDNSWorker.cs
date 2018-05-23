@@ -160,7 +160,7 @@ namespace DomainConnectDDNSUpdate
         //
         // Checks for IP changes and does the update
         //
-        public void CheckIP()
+        public void CheckIP(bool force)
         {
             // See if our IP changed
             int status = 0;
@@ -175,8 +175,7 @@ namespace DomainConnectDDNSUpdate
             }
 
             // Update the IP if it has changed
-            if (newIP != null &&
-                (newIP != this.currentIP && status >= 200 && status < 300))
+            if (force || (newIP != null && newIP != this.currentIP && status >= 200 && status < 300))
             {
                 this.WriteEvent("Updating IP to " + newIP);
                 if (!UpdateIP(newIP))                
@@ -204,13 +203,13 @@ namespace DomainConnectDDNSUpdate
         //
         // Will check if the token is relatively "fresh" for doing updates
         //
-        public void CheckToken()
+        public void CheckToken(bool force)
         {
             // See if our token is in good shape. Refresh if we are getting close to expiry
             int expires_in = (int)this.settings.ReadValue("expires_in", 0);
             int iat = (int)this.settings.ReadValue("iat", 0);
             int now = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-            if (expires_in * 7 / 8 + iat < now)
+            if (force || expires_in * 7 / 8 + iat < now)
             {
                 this.WriteEvent("Refreshing access token", EventLogEntryType.Information);
                 if (!this.RefreshToken())
@@ -246,13 +245,13 @@ namespace DomainConnectDDNSUpdate
             // If we are monitoring (after successful initialize), check for token refresh
             if (this.monitoring)
             {
-                this.CheckToken();
+                this.CheckToken(false);
             }
 
             // If we are monitoring (after initialize and token refresh), check for IP changes
             if (this.monitoring)
             {
-                this.CheckIP();
+                this.CheckIP(false);
             }
         }
 
