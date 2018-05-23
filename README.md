@@ -1,6 +1,6 @@
 # Domain Connect Dynamic DNS
 
-== Summary ==
+==Summary==
 Most residential and many small business ISPs do not provide their users with a static IP. Instead, users are assigned a 
 temporary IP address.
 
@@ -18,7 +18,7 @@ service template.
 
 Note: This application does not solve the problem of port forwarding for inbound requests.
 
-== How it works ==
+==How it works==
 
 === Setup ===
 
