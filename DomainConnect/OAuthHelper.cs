@@ -30,7 +30,7 @@ namespace OAuthHelper
             refresh_token = null;
             access_token = null;
 
-            string redirect_url = "http://dynamicdns.domainconnect.org/ddnscode";
+            string redirect_url = "https://dynamicdns.domainconnect.org/ddnscode";
 
             string url = urlAPI + "/v2/oauth/access_token?" + code_key + "=" + code + "&grant_type=" + grant + "&client_id=domainconnect.org" + "&client_secret=inconceivable&redirect_uri=" + WebUtility.UrlEncode(redirect_url);
 

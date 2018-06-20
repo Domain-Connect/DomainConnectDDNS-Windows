@@ -37,8 +37,15 @@ namespace DomainConnectDDNSUpdate
             {
                 this.eventLog1.WriteEntry(message, elt);
             }
+            else
+            	Debug.WriteLine(message, elt.ToString());
+            if (OnStatusUpdate != null)
+            	OnStatusUpdate(message, elt);
         }
 
+        public delegate void dgStatusUpdate(string text, EventLogEntryType elt);
+        public event dgStatusUpdate OnStatusUpdate;
+        
         //---------------------------------------------------
         // RefreshToken
         //
