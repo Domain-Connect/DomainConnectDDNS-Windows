@@ -1,4 +1,5 @@
-﻿using DnsClient;
+﻿using System;
+using DnsClient;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -137,8 +138,8 @@ namespace RestAPIHelper
 
                 return "";
             }
-            catch
-            {
+            catch (Exception e)
+            {            	
                 return null;
             }
 
