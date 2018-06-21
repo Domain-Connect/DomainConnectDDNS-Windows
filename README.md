@@ -31,9 +31,14 @@ This code is then copied and pasted into the application, and setup is complete.
 
 ### The Service ###
 
-The application runs in the background on Windows as a Windows Service. At startup the initial value of DNS is determined 
-by executing a simple DNS query. At a preset interval, the service pings ipify.org to determine the current public facing 
-IP address, and if different will update DNS for the host and domain name using Domain Connect.
+There are two ways the background process can run.
+
+One is as a simple Windows Tray application. The other is as a Windows Service.
+
+Both of these work basically the same way. At startup the initial value of DNS is
+determined by executing a simple DNS query. At a preset interval, the service 
+pings ipify.org to determine the current public facing IP address, 
+and if different will update DNS for the host and domain name using Domain Connect.
 
 ## Will it work with my Domain (DNS Provider)? ##
 
@@ -46,8 +51,7 @@ There isn't an installer, but the setup is pretty straight forward.
 
 ### Executables ###
 
-You can load the project into visual studio and build it, or use the .zip file which contains all the executables and 
-supporting files.  
+You can load the project into visual studio and build it, or use the .zip file which contains all the executables and supporting files.  
 
 ### Setup ###
 
@@ -58,9 +62,17 @@ to authorize the application to access DNS for your domain.
 
 After authorization copy and paste the code into the setup dialog, and click Finish.
 
+### Running the Windows Tray Application ###
+
+To run the Windows System Tray application, you simply need to run the program DomainConnectDDNSUpdateTray.exe. 
+
+Typically you would run this at startup of Windows. How this is done varies by version of Windows. 
+
+One way is to run the Task Manager, select the Startup tab, and add the program DomainConnectDDNSUpdateTray.exe.
+
 ### Installing and Running the Service ###
 
-To install the service, you need to run a cmd prompt as the System Administrator.  Visit the directory
+To run as a Windows service, you need to run a cmd prompt as the System Administrator.  Visit the directory
 where you unpacked the files, and run the command:
 
 c:\windows\Microsoft.Net\Framework\v4.0.30319\InstallUtil.exe DomainConnectDDNSUpdate.exe
@@ -77,9 +89,14 @@ Click Start (to begin the service), and select "Automatic" as the Startup Type t
 
 Interesting events are logged to the Windows Event log.
 
-## The Project ###
+## The Project ###s
 
-The project is a visual studio solution that consists of three projects.
+The project is a visual studio solution that consists of five projects.
+
+### DomainConnect ###
+
+This is a shared library containing much of the logic of the interaction with 
+Domain Connect.
 
 ### DomainConnectDDNSSetup ###
 
@@ -89,15 +106,13 @@ the browser is sent to a page which will display the oauth access token.  This s
 Clicking "Finish" in the setup program will exchange the access code for an oauth token.  This (and all other necessary data) are written to a 
 simple configuration file (settings.txt).
 
+### DomainConnectDDNSUpdateTray ###
+
+This is a Windows Tray application that monitors for DNS changes and updates IPs with the host.
+
 ### DomainConnectDDNSUpdate ###
 
 This is the Windows Service that monitors and updates the IP with the host.
-
-This sets a timer that monitors for DNS changes. The initial value is determined by doing a public DNS query. This is compared to 
-the IP address currently assigned to the home network (gotten through a call to ipify.org), and upon changes will be updated by applying the 
-Domain Connect template.
-
-Access is kept current by looking for expiration of the oauth token.
 
 ### Tester ###
 
@@ -113,7 +128,7 @@ https://github.com/Domain-Connect/Templates/blob/master/domainconnect.org.dynami
 This template uses oAuth, but the use case of this application is fairly unique. 
 
 Many companies support oAuth access. And they support multiple clients. Some of these may be web apps, some client apps. Sometimes registration is
-high touch, but often self service to the clients and at high scale. But typically it is many clients to one 
+shigh touch, but often self service to the clients and at high scale. But typically it is many clients to one 
 oAuth Provider (N:1).
 
 With Domain Connect we are introducing a new concept: the same client working with oAuth against many oAuth providers (1:N). For a 
