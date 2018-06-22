@@ -244,6 +244,15 @@ namespace DomainConnectDDNSUpdate
             }
         }
 
+        public DateTime TokenValidUntil
+        {
+        	get {
+	            int expires_in = (int)this.settings.ReadValue("expires_in", 0);
+	            int iat = (int)this.settings.ReadValue("iat", 0);
+	            return new DateTime(1970, 1, 1).AddSeconds(iat).AddSeconds(expires_in);
+        	}
+        }
+        
         //----------------------------------
         // CheckToken
         //
@@ -272,7 +281,8 @@ namespace DomainConnectDDNSUpdate
                 else
                 {
                     this._numRefreshFails = 0;
-                }
+                    this.WriteEvent("Token refreshed", EventLogEntryType.Information);
+               }
             }
         }
 
