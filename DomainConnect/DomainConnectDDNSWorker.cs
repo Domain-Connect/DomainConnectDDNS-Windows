@@ -201,6 +201,7 @@ namespace DomainConnectDDNSUpdate
                 else
                 {
                     this.numUpdateFails = 0;
+                    this.WriteEvent("IP updated", EventLogEntryType.Information);
                 }
             }
         }
