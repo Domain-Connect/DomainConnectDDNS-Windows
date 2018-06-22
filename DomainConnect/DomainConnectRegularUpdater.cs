@@ -8,15 +8,15 @@ namespace DomainConnectDDNSUpdate
 		// Timer for the updates
 		private Timer _timer;
 
+		// Approximately 15 minutes, but a prime number because I'm a nerd.
 		private int longInterval = 900001;
 
-		// Approximately 15 minutes, but a prime number because I'm a nerd.
+		// Approximately 1 minute, but a prime number because I'm still a nerd.
 		private int shortInterval = 60041;
 
-		// Approximately 1 minute, but a prime number because I'm still a nerd.
+		// Approximately 10 seconds. Yup still prime.
 		private int tinyInterval = 1007;
 
-		// Approximately 10 seconds. Yup still prime.
 		// Worker object
 		private DomainConnectDDNSWorker _worker;
 		public DomainConnectDDNSWorker Worker {
@@ -48,6 +48,7 @@ namespace DomainConnectDDNSUpdate
 			_worker.OnStatusUpdate += _worker_OnStatusUpdate;
 			_timer = new Timer();
 			_timer.Interval = tinyInterval;
+			_nextrun = DateTime.Now.AddMilliseconds(tinyInterval);
 			_timer.Elapsed += timer_Elapsed;
 		}
 		
@@ -76,12 +77,12 @@ namespace DomainConnectDDNSUpdate
 			// Re start the timer with short or standard interval depending on if we have initialized
 			if (!this._worker.Initialized) {
 				_timer.Interval = shortInterval;
-				_nextrun = _lastrun.AddSeconds(shortInterval);
+				_nextrun = _lastrun.AddMilliseconds(shortInterval);
 				_timer.Start();
 			}
 			else if (this._worker.Monitoring) {
 				_timer.Interval = longInterval;
-				_nextrun = _lastrun.AddSeconds(longInterval);
+				_nextrun = _lastrun.AddMilliseconds(longInterval);
 				_timer.Start();
 			}
 		}
