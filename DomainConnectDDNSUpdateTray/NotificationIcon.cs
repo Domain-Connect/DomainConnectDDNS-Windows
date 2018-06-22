@@ -108,9 +108,11 @@ Number of Initialize fails: {0}", _updater.Worker.NumInitializeFails)
 				: String.Format(
 @"
 Monitoring: {0}
-Number of Update fails: {1}
-Number of Refresh fails: {2}",
+Last IP Update: {1}
+Number of Update fails: {2}
+Number of Refresh fails: {3}",
 				_updater.Worker.Monitoring,
+				_updater.Worker.LastIPUpdate,
 				_updater.Worker.NumUpdateFails,
 				_updater.Worker.NumRefreshFails)),
 				ToolTipIcon.Info);

@@ -47,6 +47,14 @@ namespace DomainConnectDDNSUpdate
 				return _numRefreshFails;
 			}
 		}
+        
+        private DateTime _lastIPUpdate = DateTime.MinValue;
+		public DateTime LastIPUpdate {
+			get {
+				return _lastIPUpdate;
+			}
+		}
+        
         // Settings
         DomainConnectDDNSSettings settings;
         
@@ -122,7 +130,7 @@ namespace DomainConnectDDNSUpdate
             if (OAuthHelper.OAuthHelper.UpdateIP(domain_name, host, urlAPI, access_token, newIP))
             { 
                 this._currentIP = newIP;
-
+                this._lastIPUpdate = DateTime.Now;
                 return true;
             }
 
@@ -278,6 +286,8 @@ namespace DomainConnectDDNSUpdate
             if (!this._initialized)
             {
                 this.InitService();
+                // makes sense to update IP at the start, so that we are sure we can use the token
+                this.CheckIP(true);
             }
 
             // If we are monitoring (after successful initialize), check for token refresh
