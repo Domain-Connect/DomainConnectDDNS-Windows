@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Timers;
 namespace DomainConnectDDNSUpdate
 {
@@ -17,7 +18,26 @@ namespace DomainConnectDDNSUpdate
 
 		// Approximately 10 seconds. Yup still prime.
 		// Worker object
-		DomainConnectDDNSWorker _worker;
+		private DomainConnectDDNSWorker _worker;
+		public DomainConnectDDNSWorker Worker {
+			get {
+				return _worker;
+			}
+		}
+		
+		private DateTime _lastrun = DateTime.MinValue;
+		public DateTime LastRun {
+			get {
+				return _lastrun;
+			}
+		}
+
+		private DateTime _nextrun = DateTime.MaxValue;
+		public DateTime NextRun {
+			get {
+				return _nextrun;
+			}
+		}
 		
 		public delegate void dgStatusUpdate(string text, EventLogEntryType elt);
 		public event dgStatusUpdate OnStatusUpdate;
@@ -48,17 +68,20 @@ namespace DomainConnectDDNSUpdate
 		//
 		private void timer_Elapsed(object sender, ElapsedEventArgs e)
 		{
+			_lastrun = DateTime.Now;
 			// Stop the timer
 			_timer.Stop();
 			// Do the work
 			this._worker.DoWork();
 			// Re start the timer with short or standard interval depending on if we have initialized
-			if (!this._worker.initialized) {
+			if (!this._worker.Initialized) {
 				_timer.Interval = shortInterval;
+				_nextrun = _lastrun.AddSeconds(shortInterval);
 				_timer.Start();
 			}
-			else if (this._worker.monitoring) {
+			else if (this._worker.Monitoring) {
 				_timer.Interval = longInterval;
+				_nextrun = _lastrun.AddSeconds(longInterval);
 				_timer.Start();
 			}
 		}

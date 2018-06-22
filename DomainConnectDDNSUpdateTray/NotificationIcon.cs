@@ -92,7 +92,28 @@ namespace DomainConnectDDNSUpdateTray
 		
 		private void IconDoubleClick(object sender, EventArgs e)
 		{
-			// NOP
+			notifyIcon.ShowBalloonTip(0, "Dynamic IP Status", String.Format(
+@"Current IP: {0}
+Last run: {1}
+Next run: {2}
+{3}",
+				_updater.Worker.CurrentIP,				
+				_updater.LastRun,
+				_updater.NextRun,				
+				!_updater.Worker.Initialized 
+				? String.Format(
+@"
+Initialized: False
+Number of Initialize fails: {0}", _updater.Worker.NumInitializeFails) 
+				: String.Format(
+@"
+Monitoring: {0}
+Number of Update fails: {1}
+Number of Refresh fails: {2}",
+				_updater.Worker.Monitoring,
+				_updater.Worker.NumUpdateFails,
+				_updater.Worker.NumRefreshFails)),
+				ToolTipIcon.Info);
 		}
 
 		void notifyIcon_Disposed(object sender, EventArgs e)

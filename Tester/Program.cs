@@ -19,13 +19,13 @@ namespace Tester
 
             worker.InitService();
 
-            if (worker.initialized)
+            if (worker.Initialized)
             {
-                if (worker.monitoring)
+                if (worker.Monitoring)
                 {
                     worker.CheckToken(true);
                 }
-                if (worker.monitoring)
+                if (worker.Monitoring)
                 {
                     worker.CheckIP(true);
                 }
