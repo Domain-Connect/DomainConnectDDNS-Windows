@@ -97,15 +97,7 @@ namespace DomainConnectDDNSSetup
             this.settings.Save("settings.txt");
 
             // Form the URL for getting consent
-            string url;
-            if (providerName.ToLower() == "godaddy" || providerName.ToLower() == "secureserver")
-            {
-                url = urlAsyncUX + "/v2/domainTemplates/providers/domainconnect.org/services/dynamicdns?";
-            }
-            else
-            {
-                url = urlAsyncUX + "/v2/domainTemplates/providers/domainconnect.org?";
-            }
+            string url = urlAsyncUX + "/v2/domainTemplates/providers/domainconnect.org?";
 
             url += ("domain=" + domainnameText + "&host=" + subdomainnameText + "&client_id=domainconnect.org&scope=dynamicdns");
 
