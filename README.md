@@ -7,7 +7,7 @@ temporary IP address.
 For most users this is sufficient. However, some users may wish to access servers remotely. This might
 be for accessing files, playing a game, routing email, or even running a small on premise web hosting application.
 
-Many routers have built in proprietary protocols for udpating a DNS record with the current assigned IP address. But these
+Many routers have built in proprietary protocols for updating a DNS record with the current assigned IP address. But these
 are often tied to specific DNS Providers. And there are many bespoke applications that also work with specific providers.
 
 This projects is a Windows Service that monitors your public IP address, and when it changes will update an A record in a
