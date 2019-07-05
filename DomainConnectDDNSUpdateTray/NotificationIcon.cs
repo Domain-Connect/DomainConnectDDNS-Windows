@@ -110,10 +110,12 @@ Number of Initialize fails: {0}", _updater.Worker.NumInitializeFails)
 Monitoring: {0}
 Last IP Update: {1}
 Number of Update fails: {2}
-Number of Refresh fails: {3}",
+Token valid until: {3}
+Number of Refresh fails: {4}",
 				_updater.Worker.Monitoring,
 				_updater.Worker.LastIPUpdate,
 				_updater.Worker.NumUpdateFails,
+				_updater.Worker.TokenValidUntil,
 				_updater.Worker.NumRefreshFails)),
 				ToolTipIcon.Info);
 		}
