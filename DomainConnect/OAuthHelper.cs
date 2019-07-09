@@ -100,7 +100,7 @@ namespace OAuthHelper
 
             if (dcr != null)
             {
-                string url = "https://" + dcr + "/v2/" + "arnoldblinn.com" + "/settings";
+                string url = "https://" + dcr + "/v2/" + domain + "/settings";
                 int status = 0;
                 string json = RestAPIHelper.RestAPIHelper.GET(url, out status);
                 if (json != null && status >= 200 && status < 300)
@@ -111,8 +111,6 @@ namespace OAuthHelper
                     providerName = table["providerName"];
                     urlAPI = table["urlAPI"];
                     urlAsyncUX = table["urlAsyncUX"];
-
-
 
                     return true;
                 }

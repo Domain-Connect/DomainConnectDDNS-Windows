@@ -6,17 +6,55 @@ namespace DomainConnectDDNSUpdate
     public class DomainConnectDDNSWorker
     {
         // The IP Address that DNS has for the A Record
-        string currentIP = null;
-
+        private string _currentIP = null;
+		public string CurrentIP {
+			get {
+				return _currentIP;
+			}
+		}
+        
         // Service is initialized
-        public bool initialized = false;
+        private bool _initialized = false;
+		public bool Initialized {
+			get {
+				return _initialized;
+			}
+		}
+        
         private int numInitializeFails = 0;
-
+		public int NumInitializeFails {
+			get {
+				return numInitializeFails;
+			}
+		}
         // Service is good for monitoring DNS changes or token refreshes
-        public bool monitoring = false;
-        private int numUpdateFails = 0;
-        private int numRefreshFails = 0;
+        private bool _monitoring = false;
+		public bool Monitoring {
+			get {
+				return _monitoring;
+			}
+		}
+        private int _numUpdateFails = 0;
+		public int NumUpdateFails {
+			get {
+				return _numUpdateFails;
+			}
+		}
 
+        private int _numRefreshFails = 0;
+		public int NumRefreshFails {
+			get {
+				return _numRefreshFails;
+			}
+		}
+        
+        private DateTime _lastIPUpdate = DateTime.MinValue;
+		public DateTime LastIPUpdate {
+			get {
+				return _lastIPUpdate;
+			}
+		}
+        
         // Settings
         DomainConnectDDNSSettings settings;
         
@@ -91,8 +129,8 @@ namespace DomainConnectDDNSUpdate
 
             if (OAuthHelper.OAuthHelper.UpdateIP(domain_name, host, urlAPI, access_token, newIP))
             { 
-                this.currentIP = newIP;
-
+                this._currentIP = newIP;
+                this._lastIPUpdate = DateTime.Now;
                 return true;
             }
 
@@ -126,7 +164,7 @@ namespace DomainConnectDDNSUpdate
             {
                 this.WriteEvent("Initiaize failure: missing data. Run installer and restart service.", EventLogEntryType.Error);
 
-                this.initialized = true;
+                this._initialized = true;
 
                 return;
             }
@@ -135,9 +173,9 @@ namespace DomainConnectDDNSUpdate
             string fqdn = domain_name;
             if (!String.IsNullOrEmpty(host))
                 fqdn = host + "." + fqdn;
-            this.currentIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
+            this._currentIP = RestAPIHelper.RestAPIHelper.GetDNSIP(fqdn);
 
-            if (this.currentIP == null)
+            if (this._currentIP == null)
             {
                 this.WriteEvent("Failed to read current IP for domain.", EventLogEntryType.Error);
 
@@ -149,15 +187,15 @@ namespace DomainConnectDDNSUpdate
                 if (this.numInitializeFails > 10)
                 {
                     this.WriteEvent("Initialize failure: threshold for attempted initialize reached. Restart service.", EventLogEntryType.Error);
-                    this.initialized = true;
+                    this._initialized = true;
                 }
 
                 return;
             }
 
             // Service successfully initalized. Mark it sas such and start monitoring
-            this.initialized = true;
-            this.monitoring = true;
+            this._initialized = true;
+            this._monitoring = true;
 
             this.WriteEvent("Initialize success: Initialized and monitoring for changes.", EventLogEntryType.Information);
         }
@@ -182,29 +220,39 @@ namespace DomainConnectDDNSUpdate
             }
 
             // Update the IP if it has changed
-            if (force || (newIP != null && newIP != this.currentIP && status >= 200 && status < 300))
+            if (force || (newIP != null && newIP != this._currentIP && status >= 200 && status < 300))
             {
                 this.WriteEvent("Updating IP to " + newIP);
                 if (!UpdateIP(newIP))                
                 {
-                    this.numUpdateFails++;
+                    this._numUpdateFails++;
                     this.WriteEvent("Updating IP failed.", EventLogEntryType.Error);
 
                     // After 10 failures, we stop updating
-                    if (this.numUpdateFails > 10)
+                    if (this._numUpdateFails > 10)
                     {
                         this.WriteEvent("Updating IP threshold reached. Must restart service.", EventLogEntryType.Error);
 
-                        this.monitoring = false;
+                        this._monitoring = false;
                     }
                 }
                 else
                 {
-                    this.numUpdateFails = 0;
+                    this._numUpdateFails = 0;
+                    this.WriteEvent("IP updated", EventLogEntryType.Information);
                 }
             }
         }
 
+        public DateTime TokenValidUntil
+        {
+        	get {
+	            int expires_in = (int)this.settings.ReadValue("expires_in", 0);
+	            int iat = (int)this.settings.ReadValue("iat", 0);
+	            return new DateTime(1970, 1, 1).AddSeconds(iat).AddSeconds(expires_in);
+        	}
+        }
+        
         //----------------------------------
         // CheckToken
         //
@@ -222,18 +270,19 @@ namespace DomainConnectDDNSUpdate
                 if (!this.RefreshToken())
                 {
                     this.WriteEvent("Refreshing access failed", EventLogEntryType.Error);
-                    this.numRefreshFails++;
-                    if (this.numRefreshFails > 10)
+                    this._numRefreshFails++;
+                    if (this._numRefreshFails > 10)
                     {
                         this.WriteEvent("Refreshing access token failed threshold reached. Must restart service.");
 
-                        this.monitoring = false;
+                        this._monitoring = false;
                     }
                 }
                 else
                 {
-                    this.numRefreshFails = 0;
-                }
+                    this._numRefreshFails = 0;
+                    this.WriteEvent("Token refreshed", EventLogEntryType.Information);
+               }
             }
         }
 
@@ -244,19 +293,21 @@ namespace DomainConnectDDNSUpdate
         public void DoWork()
         {
             // If we haven't initialized, try to initialize now
-            if (!this.initialized)
+            if (!this._initialized)
             {
                 this.InitService();
+                // makes sense to update IP at the start, so that we are sure we can use the token
+                this.CheckIP(true);
             }
 
             // If we are monitoring (after successful initialize), check for token refresh
-            if (this.monitoring)
+            if (this._monitoring)
             {
                 this.CheckToken(false);
             }
 
             // If we are monitoring (after initialize and token refresh), check for IP changes
-            if (this.monitoring)
+            if (this._monitoring)
             {
                 this.CheckIP(false);
             }
