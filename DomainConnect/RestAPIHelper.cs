@@ -16,6 +16,7 @@ namespace RestAPIHelper
         //
         public static string GET(string url, out int status)
         {
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
             HttpWebResponse response = null;
             status = 0;
             try
@@ -56,6 +57,7 @@ namespace RestAPIHelper
         //
         public static string POST(string url, Dictionary<string, string> headers, out int status)
         {
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
             HttpWebResponse response = null;
             status = 0;
             try
